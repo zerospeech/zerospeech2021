@@ -10,12 +10,12 @@ TODO
 
 ## Usage
 
-The `zerospeech2020` package provides 2 command-line tools:
+The `zerospeech2021` package provides 2 command-line tools:
 
-* `zerospeech2020-validate` which validates a submission, ensuring all the
+* `zerospeech2021-validate` which validates a submission, ensuring all the
   required files are here and correctly formatted.
 
-* `zerospeech2020-evaluate` which evaluates a submission (supposed valid). Only
+* `zerospeech2021-evaluate` which evaluates a submission (supposed valid). Only
   the development datasets are evaluated. The test datasets can only be
   evaluated by doing an official submission to the challenge.
 
