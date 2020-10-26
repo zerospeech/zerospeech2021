@@ -12,7 +12,7 @@ setuptools.setup(
     version=zerospeech2021.__version__,
 
     # python package dependencies
-    install_requires=['numpy', 'pyyaml', 'joblib', 'pandas'],
+    install_requires=['pandas'],
     setup_requires=[],
 
     # include Python code and any file in zerospeech2021/share
@@ -22,8 +22,8 @@ setuptools.setup(
 
     # the command-line scripts to export
     entry_points={'console_scripts': [
-        'zerospeech2021-validate = zerospeech2021.validation.main:main',
-        'zerospeech2021-evaluate = zerospeech2021.evaluation.main:main']},
+        'zerospeech2021-validate = zerospeech2021.validation:main',
+        'zerospeech2021-evaluate = zerospeech2021.evaluation:main']},
 
     # metadata
     author='CoML team',

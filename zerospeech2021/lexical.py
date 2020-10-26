@@ -1,16 +1,107 @@
-"""Lexical level evaluation for the ZeroSpeech2021 challenge"""
+"""Validate the lexical part of a ZR2021 submission"""
 
-import argparse
+import collections
 import pathlib
+
 import pandas
+from zerospeech2021.exception import FormatError, MismatchError
+
+
+def _validate_line(index, line):
+    """Auxiliary function to validate()
+
+    Returns the filename in `line`, checks the score and raises FormatError if
+    the line is not valid.
+
+    """
+    # ensure the line has two fields seprated by a space
+    line = line.strip()
+    fields = line.split(' ')
+    if len(fields) != 2:
+        raise FormatError(
+            index, f'must be "<filename> <score>" but is "{line}"')
+
+    filename, score = tuple(fields)
+
+    # ensure the second field is a positive float
+    try:
+        if float(score) < 0:
+            raise FormatError(
+                index, f'<score> must be positive but is "{score}"')
+    except ValueError:
+        raise FormatError(
+            index, f'<score> must be a float but is "{score}"')
+
+    return filename
+
+
+def validate(submission, dataset, kind):
+    """Raises a ValidationError if the `submisison` file is not valid
+
+    * The submission file must be in text format, each line as:
+          <filename> <score>
+
+    * The <filename> is the name of a wav file in he lexical dataset, without
+      path nor extension ("xKtnLJYiWGt", not "lexical/dev/xKtnLJYiWGt.wav")
+
+    * The <score> is a positive float
+
+    Parameters
+    ----------
+    submisison: path
+        The submisison file to validate, each line must be formatted as
+        "<filename> <score>".
+    dataset: path
+        The root path of the ZR2021 dataset
+    kind: 'dev' or 'test'
+
+    Raises
+    ------
+    ValueError
+        If `kind` is not 'dev' or 'test', if `submisison` is not a file or if
+        the dataset is not an existing directory.
+    ValidationError
+        If one line of the submisison file is not valid or if the submitted
+        filenames does not fit the required ones.
+
+    """
+    if kind not in ('dev', 'test'):
+        raise ValueError(
+            f'kind must be "dev" or "test", it is {kind}')
+
+    if not pathlib.Path(submission).is_file():
+        raise ValueError(
+            f'{kind} submission file not found: {submission}')
+
+    # retrieve the required filenames that must be present in the submission
+    dataset = pathlib.Path(dataset) / f'lexical/{kind}'
+    if not dataset.is_dir():
+        raise ValueError(f'dataset not found: {dataset}')
+    required_files = set(w.stem for w in dataset.glob('*.wav'))
+
+    # ensure each line in the submission is valid and retrieve the filenames
+    submitted_files = list(
+        _validate_line(index + 1, line)
+        for index, line in enumerate(open(submission, 'r')))
+
+    # ensures the is no duplicate in the filenames
+    duplicates = [
+        f for f, n in collections.Counter(submitted_files).items() if n > 1]
+    if duplicates:
+        raise MismatchError('duplicates found', [], duplicates)
+
+    # ensure all the required files are here and there is no extra filename
+    if required_files != set(submitted_files):
+        raise MismatchError(
+            'mismatch in filenames', required_files, submitted_files)
 
 
 def load_data(gold_file, submission_file):
     """Returns the data required for evaluation as a pandas data frame
 
     Each line of the returned data frame contains a pair (word, non word) and
-    has the following columns: 'id', 'voice', 'frequency', 'word', 'word
-    score', 'non word', 'score non word'.
+    has the following columns: 'id', 'voice', 'frequency', 'word', 'score
+    word', 'non word', 'score non word'.
 
     Parameters
     ----------
@@ -33,8 +124,7 @@ def load_data(gold_file, submission_file):
     """
     # ensures the two input files are here
     for input_file in (gold_file, submission_file):
-        input_file = pathlib.Path(input_file)
-        if not input_file.is_file():
+        if not pathlib.Path(input_file).is_file():
             raise ValueError(f'file not found: {input_file}')
 
     # load them as data frames indexed by filenames
@@ -86,12 +176,6 @@ def evaluate_by_pair(data):
         The evaluated (word, non word) pairs, the data frame has the columns:
         'frequency', 'word', 'non word' and 'score'.
 
-    Raise
-    -----
-    ValueError
-        If the input files cannot be opened or in case of data mismatch between
-        the two files.
-
     """
     # compute the score for each pair in an additional 'score' column, then
     # delete the 'score word' and 'score non word' columns that become useless
@@ -101,7 +185,7 @@ def evaluate_by_pair(data):
         + (score[:, 0] > score[:, 1]))
     data.drop(columns=['score word', 'score non word'], inplace=True)
 
-    # finally get the mean score across voices for al pairs
+    # finally get the mean score across voices for all pairs
     score = data.groupby('id').apply(lambda x: (
         x.iat[0, 2],  # frequency
         x.iat[0, 3],  # word
@@ -159,26 +243,3 @@ def evaluate(gold_file, submission_file):
     by_pair = evaluate_by_pair(data)
     by_frequency = evaluate_by_frequency(by_pair)
     return by_pair, by_frequency
-
-
-def main():
-    """CLI for lexical evaluation"""
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        'gold_file', type=pathlib.Path)
-    parser.add_argument(
-        'submission_file', type=pathlib.Path)
-    parser.add_argument(
-        '-o', '--output-directory', default='.', type=pathlib.Path)
-    args = parser.parse_args()
-
-    by_pair, by_frequency = evaluate(args.gold_file, args.submission_file)
-
-    by_pair.to_csv(
-        args.output_directory / 'score_lexical_by_pair.csv', index=False)
-    by_frequency.to_csv(
-        args.output_directory / 'score_lexical_by_frequency.csv', index=False)
-
-
-if __name__ == '__main__':
-    main()
