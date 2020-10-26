@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Setup script for the zerospeech2020 Python package"""
+"""Setup script for the zerospeech2021 Python package"""
 
 import codecs
 import setuptools
