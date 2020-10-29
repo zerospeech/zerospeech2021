@@ -1,4 +1,4 @@
-"""Validate the lexical part of a ZR2021 submission"""
+"""Lexical part of the ZR2021 (validation and evaluation)"""
 
 import collections
 import pathlib
@@ -14,7 +14,7 @@ def _validate_line(index, line):
     the line is not valid.
 
     """
-    # ensure the line has two fields seprated by a space
+    # ensure the line has two fields separated by a space
     line = line.strip()
     fields = line.split(' ')
     if len(fields) != 2:
@@ -25,9 +25,7 @@ def _validate_line(index, line):
 
     # ensure the second field is a positive float
     try:
-        if float(score) < 0:
-            raise FormatError(
-                index, f'<score> must be positive but is "{score}"')
+        float(score)
     except ValueError:
         raise FormatError(
             index, f'<score> must be a float but is "{score}"')
@@ -53,7 +51,8 @@ def validate(submission, dataset, kind):
         "<filename> <score>".
     dataset: path
         The root path of the ZR2021 dataset
-    kind: 'dev' or 'test'
+    kind: str, optional
+        Must be 'dev' or 'test'
 
     Raises
     ------
@@ -128,7 +127,9 @@ def load_data(gold_file, submission_file):
             raise ValueError(f'file not found: {input_file}')
 
     # load them as data frames indexed by filenames
-    gold = pandas.read_csv(gold_file, header=0, index_col='filename')
+    gold = pandas.read_csv(
+        gold_file, header=0, index_col='filename').astype(
+            {'frequency': pandas.Int64Dtype()})
     score = pandas.read_csv(
         submission_file, sep=' ', header=None,
         names=['filename', 'score'], index_col='filename')
@@ -151,11 +152,11 @@ def load_data(gold_file, submission_file):
             lambda x: 'nw_' + x, axis=1)], axis=1)
     data.drop(
         ['w_index', 'nw_index', 'nw_voice', 'nw_frequency',
-         'w_correct', 'nw_correct', 'nw_id'],
+         'w_correct', 'nw_correct', 'nw_id', 'nw_length'],
         axis=1, inplace=True)
     data.rename(
         {'w_id': 'id', 'w_voice': 'voice', 'w_frequency': 'frequency',
-         'w_word': 'word', 'nw_word': 'non word',
+         'w_word': 'word', 'nw_word': 'non word', 'w_length': 'length',
          'w_score': 'score word', 'nw_score': 'score non word'},
         axis=1, inplace=True)
 
@@ -174,7 +175,7 @@ def evaluate_by_pair(data):
     -------
     by_pair : pandas.DataFrame
         The evaluated (word, non word) pairs, the data frame has the columns:
-        'frequency', 'word', 'non word' and 'score'.
+        'word', 'non word' 'frequency', 'length' and 'score'.
 
     """
     # compute the score for each pair in an additional 'score' column, then
@@ -187,16 +188,22 @@ def evaluate_by_pair(data):
 
     # finally get the mean score across voices for all pairs
     score = data.groupby('id').apply(lambda x: (
-        x.iat[0, 2],  # frequency
         x.iat[0, 3],  # word
-        x.iat[0, 4],  # non word
+        x.iat[0, 5],  # non word
+        x.iat[0, 2],  # frequency
+        x.iat[0, 4],  # length
         x['score'].mean()))
     return pandas.DataFrame(
-        score.to_list(), columns=['frequency', 'word', 'non word', 'score'])
+        score.to_list(),
+        columns=['word', 'non word', 'frequency', 'length', 'score'])
 
 
 def evaluate_by_frequency(by_pair):
     """Returns a data frame with mean scores by frequency bands
+
+    The frequency is defined as the number of occurences of the word in the
+    LibriSpeech dataset. The following frequency bands are considered : oov,
+    1-5, 6-20, 21-100 and >100.
 
     Parameters
     ----------
@@ -210,11 +217,36 @@ def evaluate_by_frequency(by_pair):
         following columns: 'frequency', 'score'.
 
     """
-    return by_pair.groupby('frequency').mean().reset_index()
+    bands = pandas.cut(
+        by_pair.frequency,
+        [0, 1, 5, 20, 100, float('inf')],
+        labels=['oov', '1-5', '6-20', '21-100', '>100'],
+        right=False)
+
+    return by_pair.score.groupby(bands).mean().reset_index()
+
+
+def evaluate_by_length(by_pair):
+    """Returns a data frame with mean scores by word length
+
+    Parameters
+    ----------
+    by_pair: pandas.DataFrame
+        The output of `evaluate_by_pair`
+
+    Returns
+    -------
+    by_length : pandas.DataFrame
+        The score collapsed on word length, the data frame has the
+        following columns: 'length', 'score'.
+
+    """
+    return by_pair.drop('frequency', axis=1).groupby(
+        'length').mean().reset_index()
 
 
 def evaluate(gold_file, submission_file):
-    """Returns the score by (word, non word) pair and by frequency band
+    """Returns the score by (word, non word) pair, by frequency and by length
 
     Parameters
     ----------
@@ -227,10 +259,13 @@ def evaluate(gold_file, submission_file):
     -------
     by_pair : pandas.DataFrame
         The evaluated (word, non word) pairs, the data frame has the columns:
-        'frequency', 'word', 'non word' and 'score'.
+        word', 'non word' and 'score'.
     by_frequency : pandas.DataFrame
         The score collapsed on frequency bands, the data frame has the
         following columns: 'frequency', 'score'.
+    by_length : pandas.DataFrame
+        The score collapsed on word length (in number of phones), the data
+        frame has the following columns: 'length', 'score'.
 
     Raise
     -----
@@ -240,6 +275,10 @@ def evaluate(gold_file, submission_file):
 
     """
     data = load_data(gold_file, submission_file)
+
     by_pair = evaluate_by_pair(data)
     by_frequency = evaluate_by_frequency(by_pair)
-    return by_pair, by_frequency
+    by_length = evaluate_by_length(by_pair)
+    by_pair.drop(['frequency', 'length'], axis=1, inplace=True)
+
+    return by_pair, by_frequency, by_length

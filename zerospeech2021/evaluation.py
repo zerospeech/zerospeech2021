@@ -17,13 +17,18 @@ def main():
         '-o', '--output-directory', default='.', type=pathlib.Path)
     args = parser.parse_args()
 
-    by_pair, by_frequency = lexical.evaluate(
+    by_pair, by_frequency, by_length = lexical.evaluate(
         args.gold_file, args.submission_file)
 
     by_pair.to_csv(
-        args.output_directory / 'score_lexical_by_pair.csv', index=False)
+        args.output_directory / 'score_lexical_by_pair.csv',
+        index=False, float_format='%.4f')
     by_frequency.to_csv(
-        args.output_directory / 'score_lexical_by_frequency.csv', index=False)
+        args.output_directory / 'score_lexical_by_frequency.csv',
+        index=False, float_format='%.4f')
+    by_length.to_csv(
+        args.output_directory / 'score_lexical_by_length.csv',
+        index=False, float_format='%.4f')
 
 
 if __name__ == '__main__':
