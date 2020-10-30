@@ -223,7 +223,8 @@ def evaluate_by_frequency(by_pair):
         labels=['oov', '1-5', '6-20', '21-100', '>100'],
         right=False)
 
-    return by_pair.score.groupby(bands).mean().reset_index()
+    return by_pair.score.groupby(bands).agg(
+        n='count', score='mean', std='std').reset_index()
 
 
 def evaluate_by_length(by_pair):
@@ -241,8 +242,8 @@ def evaluate_by_length(by_pair):
         following columns: 'length', 'score'.
 
     """
-    return by_pair.drop('frequency', axis=1).groupby(
-        'length').mean().reset_index()
+    return by_pair.score.groupby(by_pair.length).agg(
+        n='count', score='mean', std='std').reset_index()
 
 
 def evaluate(gold_file, submission_file):
