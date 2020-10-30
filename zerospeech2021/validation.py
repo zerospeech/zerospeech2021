@@ -4,7 +4,7 @@ import argparse
 import pathlib
 import sys
 
-from zerospeech2021 import exception, lexical
+from zerospeech2021 import exception, lexical, syntactic
 
 
 def main():
@@ -15,7 +15,7 @@ def main():
     args = parser.parse_args()
 
     try:
-        lexical.validate(
+        syntactic.validate(
             args.submission_file, args.dataset_directory, 'dev')
     except (exception.ValidationError, ValueError) as error:
         print(f'ERROR {error}')
