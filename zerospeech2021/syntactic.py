@@ -151,7 +151,7 @@ def load_data(gold_file, submission_file):
         data.loc[data['correct'] == 0].reset_index().rename(
             lambda x: 'ns_' + x, axis=1)], axis=1)
     data.drop(
-        ['s_index', 'ns_index', 'ns_voice', 'ns_type',
+        ['s_index', 'ns_index', 'ns_voice', 'ns_type', 'ns_subtype',
          's_correct', 'ns_correct', 'ns_id'],
         axis=1, inplace=True)
 
@@ -159,6 +159,7 @@ def load_data(gold_file, submission_file):
         {'s_id': 'id',
          's_voice': 'voice',
          's_type': 'type',
+         's_subtype': 'subtype',
          's_transcription': 'sentence',
          'ns_transcription': 'non sentence',
          's_score': 'score sentence',
@@ -191,16 +192,16 @@ def evaluate_by_pair(data):
         + (score[:, 0] > score[:, 1]))
     data.drop(columns=['score sentence', 'score non sentence'], inplace=True)
 
-    print(data.head())
     # finally get the mean score across voices for all pairs
-    score = data.groupby(['type', 'id']).apply(lambda x: (
+    score = data.groupby(['type', 'subtype', 'id']).apply(lambda x: (
         x.iat[0, 2],  # type
-        x.iat[0, 3],  # sentence
-        x.iat[0, 4],  # non sentence
+        x.iat[0, 3],  # subtype
+        x.iat[0, 4],  # sentence
+        x.iat[0, 5],  # non sentence
         x['score'].mean()))
     return pandas.DataFrame(
         score.to_list(),
-        columns=['type', 'sentence', 'non sentence', 'score'])
+        columns=['type', 'subtype', 'sentence', 'non sentence', 'score'])
 
 
 def evaluate_by_type(by_pair):
@@ -218,7 +219,7 @@ def evaluate_by_type(by_pair):
         following columns: 'type', 'score'.
 
     """
-    return by_pair.score.groupby(by_pair.type).agg(
+    return by_pair.score.groupby([by_pair.type, by_pair.subtype]).agg(
         n='count', score='mean', std='std').reset_index()
 
 
@@ -254,6 +255,6 @@ def evaluate(gold_file, submission_file):
     by_pair = evaluate_by_pair(data)
     print(by_pair.head())
     by_type = evaluate_by_type(by_pair)
-    by_pair.drop(['type'], axis=1, inplace=True)
+    by_pair.drop(['type', 'subtype'], axis=1, inplace=True)
 
     return by_pair, by_type
