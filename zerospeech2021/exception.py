@@ -25,6 +25,16 @@ class FormatError(ValidationError):
         return f'bad format (line {self._line}): ' + super().__str__()
 
 
+class FileFormatError(ValidationError):
+    """Raised when detecting a bad format in submission file"""
+    def __init__(self, file, message):
+        super().__init__(message)
+        self._file = file
+
+    def __str__(self):
+        return f'bad format (file {self._file}): ' + super().__str__()
+
+
 class MismatchError(ValidationError):
     """Raised when detecting a mismatch between two sets"""
     def __init__(self, message, expected, observed):
@@ -45,6 +55,17 @@ class MismatchError(ValidationError):
             self._message += ', '
         if extra:
             self._message += f'extra {_print_sublist(extra)}'
+
+    def __str__(self):
+        return self._message
+
+
+class EntryMissingError(ValidationError):
+    """Raised when an entry is missing from the result set """
+
+    def __init__(self, expected, source):
+        super().__init__()
+        self._message = f"Input file ({source} does not have a matching feature ({expected})!!!"
 
     def __str__(self):
         return self._message
