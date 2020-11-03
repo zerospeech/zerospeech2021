@@ -3,3 +3,4 @@ __pycache__/
 /zerospeech2021.egg-info/
 build/
 dist/
+.idea/
