@@ -122,7 +122,7 @@ def eval_phonetic(dataset_location: Path, submission_location: Path, output: Pat
 @click.option('--phonetic/--no-phonetic', default=True, help="Evaluate phonetic task",
               show_default=True)
 def evaluate(**kwargs):
-    """ Validate lexical submission """
+    """ Evaluate submission """
     dataset_location = Path(kwargs.get('dataset'))
     submission_location = Path(kwargs.get('submission'))
 

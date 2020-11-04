@@ -2,27 +2,63 @@ import sys
 from pathlib import Path
 import click
 
-from zerospeech2021 import (
-    exception,
-    lexical as _lexical,
-    syntactic as _syntactic,
-    phonetic as _phonetic
-)
+from zerospeech2021 import exception, meta_file
 
 
-@click.group()
-def validate():
-    """ Command to validate zerospeech2021 submissions """
-    pass
+def validate_lexical(dataset_location, submission_location):
+    raise NotImplementedError()
 
 
-@validate.command()
-@click.argument('submission_directory', type=click.Path(file_okay=False, dir_okay=True, exists=True))
-@click.argument('dataset_directory', type=click.Path(file_okay=False, dir_okay=True, exists=True))
-def all(submission_directory, dataset_directory):
-    """ Validate all zerospeech 2021 tasks """
+def validate_syntactic(dataset_location, submission_location):
+    from zerospeech2021.syntactic import validate
+
+    submission_file = submission_location / 'syntactic_dev.txt'
+    validate(submission_file, dataset_location, 'dev')
+
+    submission_file = submission_location / 'syntactic_test.txt'
+    validate(submission_file, dataset_location, 'test')
+
+
+def validate_semantic(dataset_location, submission_location):
+    raise NotImplementedError()
+
+
+def validate_phonetic(dataset_location, submission_location):
+    from zerospeech2021.phonetic import validation
+
+    validation(submission_location, dataset_location, 'test')
+    validation(submission_location, dataset_location, 'dev')
+
+
+@click.command()
+@click.argument('dataset', type=click.Path(file_okay=False, dir_okay=True, exists=True))
+@click.argument('submission', type=click.Path(file_okay=True, dir_okay=True, exists=True))
+@click.option('--lexical/--no-lexical', default=True, help="Validate lexical task",
+              show_default=True)
+@click.option('--semantic/--no-semantic', default=True, help="Validate semantic task",
+              show_default=True)
+@click.option('--syntactic/--no-syntactic', default=True, help="Validate syntactic task",
+              show_default=True)
+@click.option('--phonetic/--no-phonetic', default=True, help="Validate phonetic task",
+              show_default=True)
+def validate(**kwargs):
+    """ Validate submission """
+    dataset_location = Path(kwargs.get('dataset'))
+    submission_location = Path(kwargs.get('submission'))
     try:
-        pass
+        if kwargs.get("lexical"):
+            validate_lexical(dataset_location, submission_location)
+
+        if kwargs.get("semantic"):
+            validate_semantic(dataset_location, submission_location)
+
+        if kwargs.get("syntactic"):
+            validate_syntactic(dataset_location, submission_location)
+
+        if kwargs.get("phonetic"):
+            validate_phonetic(dataset_location, submission_location)
+
+        meta_file.validate_meta_file(submission_location)
     except (exception.ValidationError, ValueError) as error:
         print(f'ERROR {error}')
         print('Validation failed, please fix it and try again!')
@@ -30,90 +66,3 @@ def all(submission_directory, dataset_directory):
 
     print('Validation success')
     sys.exit(0)
-
-
-@validate.command()
-@click.argument('submission_file', type=click.Path(file_okay=True, dir_okay=False, exists=True))
-@click.argument('dataset_directory', type=click.Path(file_okay=False, dir_okay=True, exists=True))
-def lexical(submission_file, dataset_directory):
-    """ Validate lexical submission """
-    try:
-        pass
-    except (exception.ValidationError, ValueError) as error:
-        print(f'ERROR {error}')
-        print('Validation failed, please fix it and try again!')
-        sys.exit(-1)
-
-    print('Validation success')
-    sys.exit(0)
-
-
-@validate.command()
-@click.argument('submission_directory', type=click.Path(file_okay=False, dir_okay=True, exists=True))
-@click.argument('dataset_directory', type=click.Path(file_okay=False, dir_okay=True, exists=True))
-def semantic(submission_directory, dataset_directory):
-    """ Validate semantic submission """
-    try:
-        pass
-    except (exception.ValidationError, ValueError) as error:
-        print(f'ERROR {error}')
-        print('Validation failed, please fix it and try again!')
-        sys.exit(-1)
-
-    print('Validation success')
-    sys.exit(0)
-
-
-@validate.command()
-@click.argument('submission_file', type=click.Path(file_okay=True, dir_okay=False, exists=True))
-@click.argument('dataset_directory', type=click.Path(file_okay=False, dir_okay=True, exists=True))
-def syntactic(submission_file, dataset_directory):
-    """ Validate syntactic submission """
-    try:
-        pass
-    except (exception.ValidationError, ValueError) as error:
-        print(f'ERROR {error}')
-        print('Validation failed, please fix it and try again!')
-        sys.exit(-1)
-
-    print('Validation success')
-    sys.exit(0)
-
-
-@validate.command()
-@click.argument('submission_directory', type=click.Path(file_okay=False, dir_okay=True, exists=True))
-@click.argument('dataset_directory', type=click.Path(file_okay=False, dir_okay=True, exists=True))
-@click.option('--dev/--no-dev', default=True, help="Validate dev set (dev-clean, dev-other)", show_default=True)
-@click.option('--test/--no-test', default=True, help="Validate test set (test-clean, test-other)", show_default=True)
-@click.option('--file-type', 'file_type', help='File type in the dataset', default='flac',
-              type=click.Choice(['wav', 'flac'], case_sensitive=False), show_default=True)
-def phonetic(submission_directory, dataset_directory, dev, test, file_type):
-    """ Validate phonetic submission """
-    submission_directory = Path(submission_directory)
-    dataset_directory = Path(dataset_directory)
-
-    try:
-        if test:
-            _phonetic.validation(
-                submission_directory, dataset_directory, file_type, 'test'
-            )
-
-        if dev:
-            _phonetic.validation(
-                submission_directory, dataset_directory, file_type, 'dev'
-            )
-    except (exception.ValidationError, ValueError) as error:
-        print(f'ERROR {error}')
-        print('Validation failed, please fix it and try again!')
-        sys.exit(-1)
-
-    print('Validation success')
-    sys.exit(0)
-
-
-def run():
-    validate()
-
-
-if __name__ == '__main__':
-    run()
