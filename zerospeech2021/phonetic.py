@@ -15,6 +15,28 @@ librispeech_sets = {
 }
 
 
+def load_meta_args(features_location: Path):
+    with (features_location / 'meta.yaml').open() as fp:
+        meta = yaml.safe_load(fp)
+    try:
+        metric = meta['parameters']['phonetic']['metric']
+    except KeyError:
+        metric = "cosine"
+
+    try:
+        file_extension = meta['parameters']['file_type']
+    except KeyError:
+        file_extension = 'flac'
+
+    try:
+        features_size = meta['parameters']['phonetic']['features_size']
+
+        return features_size, metric, file_extension
+    except KeyError:
+        print("feature size must be defined in the meta.yaml")
+        exit(1)
+
+
 def get_input_files(dataset_directory, _set, file_type):
     """ Returns an iterable of all the files in a set """
     res = []
@@ -63,7 +85,7 @@ def check_entries(input_files, submission_directory: Path, dataset_directory: Pa
     return valid_entries
 
 
-def validation(submission_directory: Path, dataset_directory: Path, file_type, _set):
+def validation(submission_directory: Path, dataset_directory: Path, _set):
     """  Validate a subset of the submissions for the phonetic task
 
     :param submission_directory: location of submissions
@@ -71,6 +93,8 @@ def validation(submission_directory: Path, dataset_directory: Path, file_type, _
     :param file_type: entry files (wav | flac)
     :param _set: subset type (dev | test)
     """
+
+    _, _, file_type = load_meta_args(submission_directory)
 
     if _set not in librispeech_sets.keys():
         raise ValueError(f'kind must be "dev" or "test", it is {_set}')
@@ -93,31 +117,8 @@ def validation(submission_directory: Path, dataset_directory: Path, file_type, _
             'mismatch in filenames', valid_entries, submitted_files)
 
 
-
-def load_default_args(features_location: Path):
-    with (features_location / 'meta.yaml').open() as fp:
-        meta = yaml.safe_load(fp)
-    try:
-        metric = meta['parameters']['phonetic']['metric']
-    except KeyError:
-        metric = "cosine"
-
-    try:
-        file_extension = meta['parameters']['file_type']
-    except KeyError:
-        file_extension = 'flac'
-
-    try:
-        features_size = meta['parameters']['phonetic']['features_size']
-
-        return features_size, metric, file_extension
-    except KeyError:
-        print("feature size must be defined in the meta.yaml")
-        exit(1)
-
-
 def evaluate(features_location: Path, abx_data: Path, output_dir: Path, _set):
-    metric, feature_size, file_extension = load_default_args(features_location)
+    metric, feature_size, file_extension = load_meta_args(features_location)
 
     # todo maybe add some more parameters
     args = [
