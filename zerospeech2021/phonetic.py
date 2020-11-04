@@ -4,8 +4,10 @@ from pathlib import Path
 from itertools import chain
 
 import numpy as np
+import yaml
 
 from zerospeech2021 import exception
+from zerospeech2021.libri_light_eval import eval_ABX
 
 librispeech_sets = {
     'dev': ['dev-clean', 'dev-other'],
@@ -92,6 +94,41 @@ def validation(submission_directory: Path, dataset_directory: Path, file_type, _
 
 
 
+def load_default_args(features_location: Path):
+    with (features_location / 'meta.yaml').open() as fp:
+        meta = yaml.safe_load(fp)
+    try:
+        metric = meta['parameters']['phonetic']['metric']
+    except KeyError:
+        metric = "cosine"
+
+    try:
+        file_extension = meta['parameters']['file_type']
+    except KeyError:
+        file_extension = 'flac'
+
+    try:
+        features_size = meta['parameters']['phonetic']['features_size']
+
+        return features_size, metric, file_extension
+    except KeyError:
+        print("feature size must be defined in the meta.yaml")
+        exit(1)
 
 
+def evaluate(features_location: Path, abx_data: Path, output_dir: Path, _set):
+    metric, feature_size, file_extension = load_default_args(features_location)
 
+    # todo maybe add some more parameters
+    args = [
+        f"{features_location}",
+        "<item file>",
+        f"--file_extension {file_extension}",
+        f"--out {output_dir}",
+        f"--feature_size {feature_size}",
+        f"--distance_mode {metric}"
+    ]
+
+    for s in librispeech_sets[_set]:
+        args[1] = (abx_data / f"{s}.item")
+        eval_ABX.main(args)
