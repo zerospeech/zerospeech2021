@@ -4,8 +4,8 @@
 import codecs
 import setuptools
 
-from Cython.Build import cythonize
 import numpy
+from Cython.Build import cythonize
 
 import zerospeech2021
 
@@ -17,24 +17,25 @@ setuptools.setup(
     version=zerospeech2021.__version__,
 
     # python package dependencies
-    install_requires=codecs.open('requirements.txt', encoding='utf-8').readlines(),
+    install_requires=codecs.open(
+        'requirements.txt', encoding='utf-8').readlines(),
     setup_requires=['Cython', 'numpy'],
 
     # include Python code
     packages=setuptools.find_packages(),
     ext_modules=cythonize(
-        setuptools.Extension("libri_light_dtw",
-                             ["zerospeech2021/libri_light_eval/ABX_src/dtw.pyx"], include_dirs=[numpy.get_include()]
-                             )
-    ),
+        setuptools.Extension(
+            "libri_light_dtw",
+            ["zerospeech2021/libri_light_eval/ABX_src/dtw.pyx"],
+            include_dirs=[numpy.get_include()])),
     zip_safe=True,
 
     # the command-line scripts to export
     entry_points={
         'console_scripts': [
             'zerospeech2021-validate = zerospeech2021.validate_cmd:validate',
-            'zerospeech2021-evaluate = zerospeech2021.evaluate_cmd:evaluate',
-            'libri-abx = zerospeech2021.libri_light_eval.eval_ABX:run_as_cmd'
+            'zerospeech2021-evaluate = zerospeech2021.evaluate_cmd:evaluate'
+            # 'libri-abx = zerospeech2021.libri_light_eval.eval_ABX:run_as_cmd'
         ]
     },
 

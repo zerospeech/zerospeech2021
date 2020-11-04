@@ -34,7 +34,7 @@ def _validate_line(index, line):
 
 
 def validate(submission, dataset, kind):
-    """Raises a ValidationError if the `submisison` file is not valid
+    """Raises a ValidationError if the `submission` file is not valid
 
     * The submission file must be in text format, each line as:
           <filename> <score>

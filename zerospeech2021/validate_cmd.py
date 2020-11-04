@@ -1,3 +1,4 @@
+"""Validation program for ZR2021 submissions"""
 import sys
 from pathlib import Path
 import click
@@ -31,18 +32,32 @@ def validate_phonetic(dataset_location, submission_location):
 
 
 @click.command()
-@click.argument('dataset', type=click.Path(file_okay=False, dir_okay=True, exists=True))
-@click.argument('submission', type=click.Path(file_okay=True, dir_okay=True, exists=True))
-@click.option('--lexical/--no-lexical', default=True, help="Validate lexical task",
-              show_default=True)
-@click.option('--semantic/--no-semantic', default=True, help="Validate semantic task",
-              show_default=True)
-@click.option('--syntactic/--no-syntactic', default=True, help="Validate syntactic task",
-              show_default=True)
-@click.option('--phonetic/--no-phonetic', default=True, help="Validate phonetic task",
-              show_default=True)
+@click.argument(
+    'dataset', type=click.Path(file_okay=False, dir_okay=True, exists=True))
+@click.argument(
+    'submission', type=click.Path(file_okay=True, dir_okay=True, exists=True))
+@click.option(
+    '--lexical/--no-lexical', help="Validate lexical task",
+    default=True, show_default=True)
+@click.option(
+    '--semantic/--no-semantic', help="Validate semantic task",
+    default=True, show_default=True)
+@click.option(
+    '--syntactic/--no-syntactic', help="Validate syntactic task",
+    default=True, show_default=True)
+@click.option(
+    '--phonetic/--no-phonetic', help="Validate phonetic task",
+    default=True, show_default=True)
 def validate(**kwargs):
-    """ Validate submission """
+    """Validate a submission to the Zero Resource Speech Challenge 2021
+
+    DATASET is the root directory of the ZR2021 dataset, as downloaded with
+    the zerospeech2021-download tool.
+
+    SUBMISSION is the submission to validate, it can be a .zip file or a
+    directory.
+
+    """
     dataset_location = Path(kwargs.get('dataset'))
     submission_location = Path(kwargs.get('submission'))
     try:

@@ -5,3 +5,5 @@ build/
 dist/
 .idea/
 .DS_Store
+*.so
+zerospeech2021/libri_light_eval/ABX_src/dtw.c

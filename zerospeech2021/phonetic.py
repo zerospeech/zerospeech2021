@@ -110,9 +110,10 @@ def validation(submission_directory: Path, dataset_directory: Path, _set):
         raise exception.MismatchError('duplicates found', [], duplicates)
 
     # check that necessary files are present and valid
-    valid_entries = check_entries(input_files, submission_directory, dataset_directory, _set)
+    valid_entries = check_entries(
+        input_files, submission_directory, dataset_directory, _set)
 
-    if not collections.Counter(submitted_files) == collections.Counter(valid_entries):
+    if collections.Counter(submitted_files) != collections.Counter(valid_entries):
         raise exception.MismatchError(
             'mismatch in filenames', valid_entries, submitted_files)
 
