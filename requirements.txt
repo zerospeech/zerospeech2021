@@ -6,3 +6,5 @@ torchaudio==0.7.0
 Cython==0.29.21
 click==7.1.2
 PyYAML==5.3.1
+requests==2.24.0
+tqdm==4.51.0

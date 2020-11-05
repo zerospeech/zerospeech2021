@@ -7,6 +7,7 @@ import setuptools
 import numpy
 from Cython.Build import cythonize
 
+
 import zerospeech2021
 
 
@@ -19,7 +20,7 @@ setuptools.setup(
     # python package dependencies
     install_requires=codecs.open(
         'requirements.txt', encoding='utf-8').readlines(),
-    setup_requires=['Cython', 'numpy'],
+    setup_requires=['cython', 'numpy'],
 
     # include Python code
     packages=setuptools.find_packages(),
@@ -34,8 +35,8 @@ setuptools.setup(
     entry_points={
         'console_scripts': [
             'zerospeech2021-validate = zerospeech2021.validate_cmd:validate',
-            'zerospeech2021-evaluate = zerospeech2021.evaluate_cmd:evaluate'
-            # 'libri-abx = zerospeech2021.libri_light_eval.eval_ABX:run_as_cmd'
+            'zerospeech2021-evaluate = zerospeech2021.evaluate_cmd:evaluate',
+            'zerospeech2021-download = zerospeech2021.download_cmd:download'
         ]
     },
 
