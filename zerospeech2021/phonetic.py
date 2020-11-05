@@ -135,7 +135,8 @@ def evaluate(features_location: Path, abx_data: Path, output_dir: Path, _set):
         f"--file_extension {file_extension}",
         f"--out {output_dir}",
         f"--feature_size {feature_size}",
-        f"--distance_mode {metric}"
+        f"--distance_mode {metric}",
+        "--cuda"
     ]
 
     for s in LIBRISPEECH_SETS[_set]:

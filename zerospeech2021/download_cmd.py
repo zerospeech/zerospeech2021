@@ -1,4 +1,5 @@
-""" Script to download and setup the file for the Zerospeech 2021 challenge """
+"""Download the ZR2021 datasets"""
+
 import hashlib
 import tarfile
 import tempfile
