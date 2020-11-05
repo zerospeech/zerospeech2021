@@ -9,10 +9,9 @@ import yaml
 from zerospeech2021 import exception
 from zerospeech2021.libri_light_eval import eval_ABX
 
-librispeech_sets = {
+LIBRISPEECH_SETS = {
     'dev': ['dev-clean', 'dev-other'],
-    'test': ['test-clean', 'test-other']
-}
+    'test': ['test-clean', 'test-other']}
 
 
 def load_meta_args(features_location: Path):
@@ -33,24 +32,23 @@ def load_meta_args(features_location: Path):
 
         return features_size, metric, file_extension
     except KeyError:
-        print("feature size must be defined in the meta.yaml")
-        exit(1)
+        raise ValueError("feature size must be defined in the meta.yaml")
 
 
 def get_input_files(dataset_directory, _set, file_type):
-    """ Returns an iterable of all the files in a set """
+    """ Returns a list of all the files in a set """
     res = []
-    for s in librispeech_sets[_set]:
+    for s in LIBRISPEECH_SETS[_set]:
         res.append((dataset_directory / s).rglob(f"*.{file_type}"))
-    return chain(*res)
+    return list(chain(*res))
 
 
 def get_submitted_files(submission_directory, _set):
-    """ Returns an iterable of all the files in a set """
+    """ Returns a list of all the files in a set """
     res = []
-    for s in librispeech_sets[_set]:
+    for s in LIBRISPEECH_SETS[_set]:
         res.append((submission_directory / s).rglob("*.txt"))
-    return chain(*res)
+    return list(chain(*res))
 
 
 def verify_feature_file(feature_path: Path):
@@ -60,10 +58,12 @@ def verify_feature_file(feature_path: Path):
     """
     array = np.loadtxt(str(feature_path))
     if not array.dtype == np.dtype('float'):
-        raise exception.FileFormatError(feature_path, "array loaded is not dtype = float")
+        raise exception.FileFormatError(
+            feature_path, "array loaded is not dtype = float")
 
 
-def check_entries(input_files, submission_directory: Path, dataset_directory: Path, _set):
+def check_entries(
+        input_files, submission_directory, dataset_directory, _set):
     """ Checks all entries from the input dataset to see if they match they
         exist in the submitted set.
     :param input_files: list of input files (from dataset)
@@ -85,7 +85,7 @@ def check_entries(input_files, submission_directory: Path, dataset_directory: Pa
     return valid_entries
 
 
-def validation(submission_directory: Path, dataset_directory: Path, _set):
+def validate(submission, dataset, _set):
     """  Validate a subset of the submissions for the phonetic task
 
     :param submission_directory: location of submissions
@@ -94,13 +94,20 @@ def validation(submission_directory: Path, dataset_directory: Path, _set):
     :param _set: subset type (dev | test)
     """
 
-    _, _, file_type = load_meta_args(submission_directory)
+    _, _, file_type = load_meta_args(submission)
 
-    if _set not in librispeech_sets.keys():
+    if _set not in LIBRISPEECH_SETS.keys():
         raise ValueError(f'kind must be "dev" or "test", it is {_set}')
 
-    input_files = get_input_files(dataset_directory, _set, file_type)
-    submitted_files = get_submitted_files(submission_directory, _set)
+    input_files = get_input_files(dataset, _set, file_type)
+    if not input_files:
+        raise exception.ValidationError(
+            f'found no {file_type} files in {dataset}')
+
+    submitted_files = get_submitted_files(submission, _set)
+    if not input_files:
+        raise exception.ValidationError(
+            f'found no .txt files in {submission}')
 
     # ensure that there are no duplicates
     duplicates = [
@@ -111,7 +118,7 @@ def validation(submission_directory: Path, dataset_directory: Path, _set):
 
     # check that necessary files are present and valid
     valid_entries = check_entries(
-        input_files, submission_directory, dataset_directory, _set)
+        input_files, submission, dataset, _set)
 
     if collections.Counter(submitted_files) != collections.Counter(valid_entries):
         raise exception.MismatchError(
@@ -131,6 +138,6 @@ def evaluate(features_location: Path, abx_data: Path, output_dir: Path, _set):
         f"--distance_mode {metric}"
     ]
 
-    for s in librispeech_sets[_set]:
+    for s in LIBRISPEECH_SETS[_set]:
         args[1] = (abx_data / f"{s}.item")
         eval_ABX.main(args)

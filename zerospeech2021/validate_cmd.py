@@ -1,81 +1,116 @@
 """Validation program for ZR2021 submissions"""
+
+import atexit
+import pathlib
+import shutil
 import sys
-from pathlib import Path
+import tempfile
+import zipfile
+
 import click
 
-from zerospeech2021 import exception, meta_file
+from zerospeech2021 import (
+    exception, meta, phonetic, lexical, syntactic, semantic)
 
 
-def validate_lexical(dataset_location, submission_location):
-    raise NotImplementedError()
-
-
-def validate_syntactic(dataset_location, submission_location):
-    from zerospeech2021.syntactic import validate
-
-    submission_file = submission_location / 'syntactic_dev.txt'
-    validate(submission_file, dataset_location, 'dev')
-
-    submission_file = submission_location / 'syntactic_test.txt'
-    validate(submission_file, dataset_location, 'test')
-
-
-def validate_semantic(dataset_location, submission_location):
-    raise NotImplementedError()
-
-
-def validate_phonetic(dataset_location, submission_location):
-    from zerospeech2021.phonetic import validation
-
-    validation(submission_location, dataset_location, 'test')
-    validation(submission_location, dataset_location, 'dev')
-
-
-@click.command()
-@click.argument(
-    'dataset', type=click.Path(file_okay=False, dir_okay=True, exists=True))
-@click.argument(
-    'submission', type=click.Path(file_okay=True, dir_okay=True, exists=True))
-@click.option(
-    '--lexical/--no-lexical', help="Validate lexical task",
-    default=True, show_default=True)
-@click.option(
-    '--semantic/--no-semantic', help="Validate semantic task",
-    default=True, show_default=True)
-@click.option(
-    '--syntactic/--no-syntactic', help="Validate syntactic task",
-    default=True, show_default=True)
-@click.option(
-    '--phonetic/--no-phonetic', help="Validate phonetic task",
-    default=True, show_default=True)
-def validate(**kwargs):
+@click.command(epilog='See https://zerospeech.com/2021 for more details')
+@click.argument('dataset', type=pathlib.Path)
+@click.argument('submission', type=pathlib.Path)
+@click.option('--only-dev', help='Skip test part', is_flag=True)
+@click.option('--no-phonetic', help="Skip phonetic part", is_flag=True)
+@click.option('--no-lexical', help="Skip lexical part", is_flag=True)
+@click.option('--no-syntactic', help="Skip syntactic part", is_flag=True)
+@click.option('--no-semantic', help="Skip semantic part", is_flag=True)
+def validate(
+        dataset, submission, only_dev,
+        no_phonetic, no_lexical, no_syntactic, no_semantic):
     """Validate a submission to the Zero Resource Speech Challenge 2021
 
-    DATASET is the root directory of the ZR2021 dataset, as downloaded with
-    the zerospeech2021-download tool.
+    DATASET is the root directory of the ZR2021 dataset, as downloaded with the
+    zerospeech2021-download tool.
 
     SUBMISSION is the submission to validate, it can be a .zip file or a
     directory.
 
     """
-    dataset_location = Path(kwargs.get('dataset'))
-    submission_location = Path(kwargs.get('submission'))
     try:
-        if kwargs.get("lexical"):
-            validate_lexical(dataset_location, submission_location)
+        # ensures the dataset exists
+        dataset = dataset.resolve(strict=True)
+        if not dataset.is_dir():
+            raise ValueError(f'dataset not found: {dataset}')
 
-        if kwargs.get("semantic"):
-            validate_semantic(dataset_location, submission_location)
+        # ensures the submission exists, it it is a zip, uncompress it
+        submission = submission.resolve(strict=True)
+        if submission.is_file() and zipfile.is_zipfile(submission):
+            # create a temp directory we remove at exit
+            submission_unzip = tempfile.mkdtemp()
+            atexit.register(shutil.rmtree, submission_unzip)
 
-        if kwargs.get("syntactic"):
-            validate_syntactic(dataset_location, submission_location)
+            # uncompress to the temp directory
+            print(f'Unzip submission ot {submission_unzip}...')
+            zipfile.ZipFile(submission, 'r').extractall(submission_unzip)
+            submission = submission_unzip
+        elif not submission.is_dir():
+            raise ValueError(
+                f'submssion is not a zip file or a directory: {submission}')
 
-        if kwargs.get("phonetic"):
-            validate_phonetic(dataset_location, submission_location)
+        # validate meta.yaml
+        meta.validate(submission)
 
-        meta_file.validate_meta_file(submission_location)
-    except (exception.ValidationError, ValueError) as error:
-        print(f'ERROR {error}')
+        # validate phonetic
+        if not no_phonetic:
+            print('Validating phonetic dev...')
+            phonetic.validate(
+                submission / 'phonetic',
+                dataset / 'phonetic', 'dev')
+
+            if not only_dev:
+                print('Validating phonetic test...')
+                phonetic.validate(
+                    submission / 'phonetic',
+                    dataset / 'phonetic', 'test')
+
+        # validate lexical
+        if not no_lexical:
+            print('Validating lexical dev...')
+            lexical.validate(
+                submission / 'lexical' / 'dev.txt',
+                dataset, 'dev')
+
+            if not only_dev:
+                print('Validating lexical test...')
+                lexical.validate(
+                    submission / 'lexical' / 'test.txt',
+                    dataset, 'test')
+
+        # validate syntactic
+        if not no_syntactic:
+            print('Validating syntactic dev...')
+            syntactic.validate(
+                submission / 'syntactic' / 'dev.txt',
+                dataset, 'dev')
+
+            if not only_dev:
+                print('Validating syntactic test...')
+                syntactic.validate(
+                    submission / 'syntactic' / 'test.txt',
+                    dataset, 'test')
+
+        # validate semantic
+        if not no_semantic:
+            print('Validating semantic dev...')
+            semantic.validate(
+                submission / 'semantic' / 'dev',
+                dataset, 'dev')
+
+            if not only_dev:
+                print('Validating semantic test...')
+                semantic.validate(
+                    submission / 'semantic' / 'test',
+                    dataset, 'test')
+
+    except (exception.ValidationError, ValueError, FileNotFoundError) as error:
+        print(f'ERROR: {error}')
         print('Validation failed, please fix it and try again!')
         sys.exit(-1)
 

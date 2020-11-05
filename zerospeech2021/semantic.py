@@ -7,7 +7,8 @@ import numpy as np
 import pandas
 import scipy.spatial
 
-from exception import MismatchError, FileFormatError, ValidationError
+from zerospeech2021.exception import (
+    MismatchError, FileFormatError, ValidationError)
 
 
 def _validate_folder(dataset, submission):
