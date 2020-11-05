@@ -1,3 +1,12 @@
+# Note from ZR2021 organizers
+
+This is a modified version of the libri-light evaluation cde available at
+https://github.com/facebookresearch/libri-light/tree/master/eval.
+
+Modification only consists in files renaming and package reorganization to
+facilitate installation and integration with the zerospeech2021 package.
+
+
 # Eval
 
 You will find here all relevant evaluation launched on the LibriLight-dataset.

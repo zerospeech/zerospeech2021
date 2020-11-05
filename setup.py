@@ -27,16 +27,16 @@ setuptools.setup(
     ext_modules=cythonize(
         setuptools.Extension(
             "libri_light_dtw",
-            ["zerospeech2021/libri_light_eval/ABX_src/dtw.pyx"],
+            ["zerospeech2021/phonetic_eval/ABX_src/dtw.pyx"],
             include_dirs=[numpy.get_include()])),
     zip_safe=True,
 
     # the command-line scripts to export
     entry_points={
         'console_scripts': [
-            'zerospeech2021-validate = zerospeech2021.validate_cmd:validate',
-            'zerospeech2021-evaluate = zerospeech2021.evaluate_cmd:evaluate',
-            'zerospeech2021-download = zerospeech2021.download_cmd:download'
+            'zerospeech2021-validate = zerospeech2021.cli.validate:validate',
+            'zerospeech2021-evaluate = zerospeech2021.cli.evaluate:evaluate',
+            'zerospeech2021-download = zerospeech2021.cli.download:download'
         ]
     },
 

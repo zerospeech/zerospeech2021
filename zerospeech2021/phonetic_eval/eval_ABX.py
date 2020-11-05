@@ -5,9 +5,9 @@ import torch
 import json
 import os
 import numpy as np
-import zerospeech2021.libri_light_eval.ABX_src.abx_group_computation as abx_g
-import zerospeech2021.libri_light_eval.ABX_src.abx_iterators as abx_it
-from zerospeech2021.libri_light_eval.CPC_loader import load_cpc_features, build_feature_from_file
+import zerospeech2021.phonetic_eval.ABX_src.abx_group_computation as abx_g
+import zerospeech2021.phonetic_eval.ABX_src.abx_iterators as abx_it
+from zerospeech2021.phonetic_eval.CPC_loader import load_cpc_features, build_feature_from_file
 from pathlib import Path
 
 
@@ -209,4 +209,3 @@ def run_as_cmd():
 
 if __name__ == "__main__":
     run_as_cmd()
-
