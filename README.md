@@ -6,11 +6,28 @@ submission to the [ZeroSpeech Challenge 2021](https://zerospeech.com/2021).
 
 ## Installation
 
-TODO
+* First clone this repository
+
+        git clone https://github.com/zerospeech/zerospeech2021.git
+        cd zerospeech2021
+
+* Setup a conda environment:
+
+        conda env create -f environment.yml
+
+* Activate the created environment:
+
+        conda activate zerospeech2021
+
+* Fiannly install this package:
+
+        python setup.py install
 
 ## Usage
 
-The `zerospeech2021` package provides 2 command-line tools:
+The `zerospeech2021` package provides 3 command-line tools:
+
+* `zerospeech2021-download` which dowloads the challenge datasets
 
 * `zerospeech2021-validate` which validates a submission, ensuring all the
   required files are here and correctly formatted.

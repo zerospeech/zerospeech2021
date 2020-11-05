@@ -1,0 +1,21 @@
+name: zerospeech2021
+channels:
+  - pytorch
+  - defaults
+dependencies:
+  - python=3
+  - click
+  - cudatoolkit=9.2
+  - cython
+  - numpy
+  - pandas
+  - pip
+  - pytorch
+  - pyyaml
+  - requests
+  - scipy
+  - torchaudio
+  - tqdm
+  - pip:
+    - progressbar2
+    - sox

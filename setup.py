@@ -18,8 +18,6 @@ setuptools.setup(
     version=zerospeech2021.__version__,
 
     # python package dependencies
-    install_requires=codecs.open(
-        'requirements.txt', encoding='utf-8').readlines(),
     setup_requires=['cython', 'numpy'],
 
     # include Python code
