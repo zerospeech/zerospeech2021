@@ -99,15 +99,11 @@ def validate(
         # validate semantic
         if not no_semantic:
             print('Validating semantic dev...')
-            semantic.validate(
-                submission / 'semantic' / 'dev',
-                dataset, 'dev')
+            semantic.validate(submission / 'semantic', dataset, 'dev')
 
             if not only_dev:
                 print('Validating semantic test...')
-                semantic.validate(
-                    submission / 'semantic' / 'test',
-                    dataset, 'test')
+                semantic.validate(submission / 'semantic', dataset, 'test')
 
     except (exception.ValidationError, ValueError, FileNotFoundError) as error:
         print(f'ERROR: {error}')
