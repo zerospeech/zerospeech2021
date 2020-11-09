@@ -132,20 +132,11 @@ def evaluate(features_location: Path, abx_data: Path, output_dir: Path, _set):
     args = [
         f"--file_extension",
         f"{file_extension}",
-        # output locations
-        f"--out",
-        f"{output_dir}",
-        # feature size
-        "--feature_size",
-        f"{feature_size}",
-        # distance mode
-        "--distance_mode",
-        f"{metric}",
-        # use gpu
+        f"--out {output_dir}",
+        f"--feature_size {feature_size}",
+        f"--distance_mode {metric}",
         "--cuda",
-        # eval mode
-        "--mode",
-        "all",
+        "--mode all",
         f"{features_location}",
         "<item file>"
     ]
