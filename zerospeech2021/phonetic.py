@@ -148,5 +148,5 @@ def evaluate(features_location: Path, abx_data: Path, output_dir: Path, _set):
     ]
 
     for s in LIBRISPEECH_SETS[_set]:
-        args[-1] = (abx_data / f"{s}.item")
+        args[-1] = f'{(abx_data / f"{s}.item")}'
         eval_ABX.main(args)
