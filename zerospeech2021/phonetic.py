@@ -25,7 +25,7 @@ def load_meta_args(features_location: Path):
     try:
         file_extension = meta['parameters']['file_type']
     except KeyError:
-        file_extension = 'flac'
+        file_extension = 'wav'
 
     try:
         features_size = meta['parameters']['phonetic']['features_size']
@@ -94,15 +94,13 @@ def validate(submission, dataset, _set):
     :param _set: subset type (dev | test)
     """
 
-    _, _, file_type = load_meta_args(submission.parents[0])
-
     if _set not in LIBRISPEECH_SETS.keys():
         raise ValueError(f'kind must be "dev" or "test", it is {_set}')
 
-    input_files = get_input_files(dataset, _set, file_type)
+    input_files = get_input_files(dataset, _set, "*.wav")
     if not input_files:
         raise exception.ValidationError(
-            f'found no {file_type} files in {dataset}')
+            f'found no wav files in {dataset}')
 
     submitted_files = get_submitted_files(submission, _set)
     if not input_files:
