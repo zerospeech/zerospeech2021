@@ -25,7 +25,7 @@ def load_meta_args(features_location: Path):
     try:
         file_extension = meta['parameters']['file_type']
     except KeyError:
-        file_extension = 'wav'
+        file_extension = '.wav'
 
     try:
         features_size = meta['parameters']['phonetic']['features_size']
@@ -126,18 +126,27 @@ def validate(submission, dataset, _set):
 def evaluate(features_location: Path, abx_data: Path, output_dir: Path, _set):
     metric, feature_size, file_extension = load_meta_args(features_location.parents[1])
 
-    # todo maybe add some more parameters
     args = [
-        f"{features_location}",
-        "<item file>",
-        f"--file_extension {file_extension}",
-        f"--out {output_dir}",
-        f"--feature_size {feature_size}",
-        f"--distance_mode {metric}",
+        f"--file_extension",
+        f"{file_extension}",
+        # output locations
+        f"--out",
+        f"{output_dir}",
+        # feature size
+        "--feature_size",
+        f"{feature_size}",
+        # distance mode
+        "--distance_mode",
+        f"{metric}",
+        # use gpu
         "--cuda",
-        "--mode all"
+        # eval mode
+        "--mode",
+        "all",
+        f"{features_location}",
+        "<item file>"
     ]
 
     for s in LIBRISPEECH_SETS[_set]:
-        args[1] = (abx_data / f"{s}.item")
+        args[-1] = (abx_data / f"{s}.item")
         eval_ABX.main(args)
