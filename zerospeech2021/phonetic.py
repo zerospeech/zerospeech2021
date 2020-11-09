@@ -97,7 +97,7 @@ def validate(submission, dataset, _set):
     if _set not in LIBRISPEECH_SETS.keys():
         raise ValueError(f'kind must be "dev" or "test", it is {_set}')
 
-    input_files = get_input_files(dataset, _set, "*.wav")
+    input_files = get_input_files(dataset, _set, "wav")
     if not input_files:
         raise exception.ValidationError(
             f'found no wav files in {dataset}')
