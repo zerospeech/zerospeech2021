@@ -124,7 +124,7 @@ def validate(submission, dataset, _set):
 
 
 def evaluate(features_location: Path, abx_data: Path, output_dir: Path, _set):
-    metric, feature_size, file_extension = load_meta_args(features_location)
+    metric, feature_size, file_extension = load_meta_args(features_location.parents[1])
 
     # todo maybe add some more parameters
     args = [
@@ -134,7 +134,8 @@ def evaluate(features_location: Path, abx_data: Path, output_dir: Path, _set):
         f"--out {output_dir}",
         f"--feature_size {feature_size}",
         f"--distance_mode {metric}",
-        "--cuda"
+        "--cuda",
+        "--mode all"
     ]
 
     for s in LIBRISPEECH_SETS[_set]:
