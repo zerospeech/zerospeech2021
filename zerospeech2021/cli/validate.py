@@ -74,26 +74,26 @@ def validate(
         if not no_lexical:
             print('Validating lexical dev...')
             lexical.validate(
-                submission / 'lexical' / 'dev.txt',
+                submission / 'lexical' / 'dev_submission.txt',
                 dataset, 'dev')
 
             if not only_dev:
                 print('Validating lexical test...')
                 lexical.validate(
-                    submission / 'lexical' / 'test.txt',
+                    submission / 'lexical' / 'test_submission.txt',
                     dataset, 'test')
 
         # validate syntactic
         if not no_syntactic:
             print('Validating syntactic dev...')
             syntactic.validate(
-                submission / 'syntactic' / 'dev.txt',
+                submission / 'syntactic' / 'dev_submission.txt',
                 dataset, 'dev')
 
             if not only_dev:
                 print('Validating syntactic test...')
                 syntactic.validate(
-                    submission / 'syntactic' / 'test.txt',
+                    submission / 'syntactic' / 'test_submission.txt',
                     dataset, 'test')
 
         # validate semantic
