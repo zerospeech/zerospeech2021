@@ -94,7 +94,7 @@ def validate(submission, dataset, _set):
     :param _set: subset type (dev | test)
     """
 
-    _, _, file_type = load_meta_args(submission)
+    _, _, file_type = load_meta_args(submission.parents[0])
 
     if _set not in LIBRISPEECH_SETS.keys():
         raise ValueError(f'kind must be "dev" or "test", it is {_set}')
