@@ -19,7 +19,7 @@ def eval_lexical(dataset, submission, output, kinds):
         print(f'Evaluating lexical {kind}...')
 
         gold_file = dataset / 'lexical' / kind / 'gold.csv'
-        submission_file = submission / 'lexical' / f'{kind}.txt'
+        submission_file = submission / 'lexical' / f'{kind}_submission.txt'
 
         by_pair, by_frequency, by_length = lexical.evaluate(
             gold_file, submission_file)
@@ -60,7 +60,7 @@ def eval_syntactic(dataset, submission, output, kinds):
         print(f'Evaluating syntactic {kind}...')
 
         gold_file = dataset / 'syntactic' / kind / 'gold.csv'
-        submission_file = submission / 'syntactic' / f'{kind}.txt'
+        submission_file = submission / 'syntactic' / f'{kind}_submission.txt'
 
         by_pair, by_type = syntactic.evaluate(gold_file, submission_file)
         by_pair.to_csv(
