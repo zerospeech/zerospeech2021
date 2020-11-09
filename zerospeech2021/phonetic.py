@@ -30,7 +30,7 @@ def load_meta_args(features_location: Path):
     try:
         features_size = meta['parameters']['phonetic']['features_size']
 
-        return features_size, metric, file_extension
+        return dict(features_size=features_size, metric=metric, file_extension=file_extension)
     except KeyError:
         raise ValueError("feature size must be defined in the meta.yaml")
 
@@ -124,7 +124,10 @@ def validate(submission, dataset, _set):
 
 
 def evaluate(features_location: Path, abx_data: Path, output_dir: Path, _set):
-    metric, feature_size, file_extension = load_meta_args(features_location.parents[1])
+    meta_values = load_meta_args(features_location.parents[1])
+    metric = meta_values.get("metric", 'cosine')
+    feature_size = meta_values.get("feature_size")
+    file_extension = meta_values.get("file_extension", '.wav')
 
     args = [
         f"--file_extension",
