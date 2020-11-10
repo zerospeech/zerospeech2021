@@ -36,6 +36,12 @@ def load_npy(x):
     return data
 
 
+def load_txt(x):
+    data = torch.tensor(np.loadtxt(x))
+    assert (len(data.size()) == 2)
+    return data
+
+
 def ABX(feature_function,
         path_item_file,
         seq_list,
@@ -155,21 +161,25 @@ def parse_args(argv):
     return parser.parse_args(argv)
 
 
-def main(argv):
+def main(argv=None, arg_obj=None):
 
-    args = parse_args(argv)
+    if argv:
+        args = parse_args(argv)
+    else:
+        args = arg_obj
 
     if args.path_checkpoint is None:
         if args.file_extension == '.pt':
             feature_function = load_pt
         elif args.file_extension == '.npy':
             feature_function = load_npy
+        elif args.file_extension == '.txt':
+            feature_function = load_txt
     else:
         state_dict = torch.load(args.path_checkpoint)
         feature_maker = load_cpc_features(state_dict)
         feature_maker.cuda()
-        def feature_function(
-            x): return build_feature_from_file(x, feature_maker)
+        def feature_function(x): return build_feature_from_file(x, feature_maker)
 
     # Modes
     if args.mode == 'all':

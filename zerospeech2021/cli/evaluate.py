@@ -72,13 +72,12 @@ def eval_syntactic(dataset, submission, output, kinds):
 
 
 def eval_phonetic(dataset, submission, output, kinds):
-    abx_data = dataset / 'phonetic' / 'abx_features'
+    phonetic_dataset = dataset / 'phonetic'
+    features_location = submission / 'phonetic'
 
     for kind in kinds:  # 'dev' or 'test'
         print(f'Evaluating phonetic {kind}...')
-
-        features_location = submission / 'phonetic' / kind
-        phonetic.evaluate(features_location, abx_data, output, kind)
+        phonetic.evaluate(features_location, phonetic_dataset, output, kind)
 
 
 @click.command(epilog='See https://zerospeech.com/2021 for more details')

@@ -34,7 +34,8 @@ setuptools.setup(
         'console_scripts': [
             'zerospeech2021-validate = zerospeech2021.cli.validate:validate',
             'zerospeech2021-evaluate = zerospeech2021.cli.evaluate:evaluate',
-            'zerospeech2021-download = zerospeech2021.cli.download:download'
+            'zerospeech2021-download = zerospeech2021.cli.download:download',
+            'libri-abx = zerospeech2021.phonetic_eval.eval_ABX:run_as_cmd'
         ]
     },
 

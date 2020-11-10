@@ -1,7 +1,10 @@
 """ Phonetic task zerospeech 2021 """
 import collections
+from dataclasses import dataclass
 from pathlib import Path
 from itertools import chain
+from typing import Optional
+from enum import Enum
 
 import numpy as np
 import yaml
@@ -14,23 +17,54 @@ LIBRISPEECH_SETS = {
     'test': ['test-clean', 'test-other']}
 
 
+ABXFileTypes = Enum('ABXFileTypes',
+                    '.pt .npy .txt .wav .flac .mp3')
+ABXMode = Enum('ABXMode', 'all within across')
+
+ABXDistanceMode = Enum('ABXDistanceMode',
+                       'euclidian cosine kl kl_symmetric')
+
+
+@dataclass
+class AbxArguments:
+    """ List of arguments to provide to abx in phonetic_eval.abx"""
+    # path to input data
+    path_data: str
+    # path to item file
+    path_item_file: str
+    # Path to a CPC checkpoint
+    path_checkpoint: Optional[str] = None
+    # size of a single feature
+    feature_size: Optional[float] = float(0.1)
+    # Use the GPU to compute distances
+    cuda: bool = True
+    # extension (of input files ?)
+    file_extension: ABXFileTypes = '.txt'
+    # Choose the mode of the ABX score to compute
+    mode: ABXMode = 'all'
+    # Choose the kind of distance to use to compute
+    distance_mode: ABXDistanceMode = 'cosine'
+    # Max size of a group while computing the ABX score
+    max_size_group: int = 10
+    # When computing the ABX across score, maximum
+    # number of speaker X to sample per couple A,B.
+    max_x_across: int = 5
+    # location to output the results
+    out: Optional[str] = None
+
+
 def load_meta_args(features_location: Path):
     with (features_location / 'meta.yaml').open() as fp:
         meta = yaml.safe_load(fp)
     try:
         metric = meta['parameters']['phonetic']['metric']
     except KeyError:
-        metric = "cosine"
+        raise ValueError("The metric must be specified in the meta.yaml phonetic section")
 
     try:
-        file_extension = meta['parameters']['file_type']
-    except KeyError:
-        file_extension = '.wav'
+        features_size = float(meta['parameters']['phonetic']['features_size'])
 
-    try:
-        features_size = meta['parameters']['phonetic']['features_size']
-
-        return dict(features_size=features_size, metric=metric, file_extension=file_extension)
+        return dict(features_size=features_size, metric=metric)
     except KeyError:
         raise ValueError("feature size must be defined in the meta.yaml")
 
@@ -123,24 +157,15 @@ def validate(submission, dataset, _set):
             'mismatch in filenames', valid_entries, submitted_files)
 
 
-def evaluate(features_location: Path, abx_data: Path, output_dir: Path, _set):
-    meta_values = load_meta_args(features_location.parents[1])
+def evaluate(features_location: Path, dataset: Path, output_dir: Path, kind):
+    meta_values = load_meta_args(features_location.parents[0])
     metric = meta_values.get("metric", 'cosine')
-    feature_size = meta_values.get("feature_size")
-    file_extension = meta_values.get("file_extension", '.wav')
+    feature_size = meta_values.get("feature_size", 0.01)
 
-    args = [
-        f"--file_extension",
-        f"{file_extension}",
-        f"--out {output_dir}",
-        f"--feature_size {feature_size}",
-        f"--distance_mode {metric}",
-        "--cuda",
-        "--mode all",
-        f"{features_location}",
-        "<item file>"
-    ]
-
-    for s in LIBRISPEECH_SETS[_set]:
-        args[-1] = f'{(abx_data / f"{s}.item")}'
-        eval_ABX.main(args)
+    for _set in LIBRISPEECH_SETS[kind]:
+        arg_obj = AbxArguments(
+            path_data=str(features_location / _set), path_item_file=f'{(dataset / _set / f"{_set}.item")}',
+            distance_mode=f"{metric}", feature_size=feature_size,
+            out=f"{output_dir}"
+        )
+        eval_ABX.main(arg_obj=arg_obj)
