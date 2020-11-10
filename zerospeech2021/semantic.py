@@ -29,7 +29,9 @@ def _validate_folder(dataset, submission):
     if submitted != required:
         raise MismatchError('files mismatch', required, submitted)
 
-    # ensure each submitted file has a correct format
+    # ensure each submitted file has a correct format ad the number of columns
+    # is constant across files
+    ncols = None
     for filename in submitted:
         filename = submission / (filename + '.txt')
         try:
@@ -39,6 +41,14 @@ def _validate_folder(dataset, submission):
 
         if array.dtype != np.dtype('float'):
             raise FileFormatError(filename, 'not a float array')
+
+        if array.ndim != 2:
+            raise FileFormatError(filename, 'not a 2D array')
+
+        if ncols and array.shape[1] != ncols:
+            raise FileFormatError(
+                filename, f'expected {ncols} columns but get {array.shape[1]}')
+        ncols = array.shape[1]
 
 
 def validate(submission, dataset, kind):

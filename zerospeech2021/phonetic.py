@@ -86,14 +86,28 @@ def get_submitted_files(submission_directory, _set):
 
 
 def verify_feature_file(feature_path: Path):
-    """ Verifies that a feature file is a parsable numpy array of floats
-        :raises exception.FileFormatError if the types are not correct
-        :raises ValueError if the file is not parsable by numpy
+    """ Verifies that a feature file is a 2D numpy array of floats
+
+    :raises exception.FileFormatError if the types are not correct
+    :raises ValueError if the file is not a valid numpy array
+
+    :return: the number of columns in the array
     """
-    array = np.loadtxt(str(feature_path))
-    if not array.dtype == np.dtype('float'):
+    try:
+        array = np.loadtxt(str(feature_path))
+    except Exception:
+        raise exception.FileFormatError(
+            feature_path, 'not a valid numpy array')
+
+    if array.dtype != np.dtype('float'):
         raise exception.FileFormatError(
             feature_path, "array loaded is not dtype = float")
+
+    if array.ndim != 2:
+        raise exception.FileFormatError(
+            feature_path, 'not a 2D array')
+
+    return array.shape[1]
 
 
 def check_entries(
@@ -107,6 +121,7 @@ def check_entries(
     :return: a list of valid entries
     :raises exception.EntryMissingError if an entry is not present
     """
+    ncols = None
     valid_entries = []
     for file in input_files:
         pure_path = file.relative_to(dataset_directory)
@@ -114,7 +129,13 @@ def check_entries(
         txt_file = txt_file.with_suffix('.txt')
         if not txt_file.is_file():
             raise exception.EntryMissingError(source=file, expected=txt_file)
-        verify_feature_file(txt_file)
+
+        current_ncols = verify_feature_file(txt_file)
+        if ncols and current_ncols != ncols:
+            raise exception.FileFormatError(
+                txt_file, f'expected {ncols} columns but get {current_ncols}')
+        ncols = current_ncols
+
         valid_entries.append(txt_file)
     return valid_entries
 
