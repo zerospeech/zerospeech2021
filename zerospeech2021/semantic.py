@@ -6,52 +6,46 @@ import pathlib
 import numpy as np
 import pandas
 import scipy.spatial
+import joblib
 
 from zerospeech2021.exception import (
-    MismatchError, FileFormatError, ValidationError)
+    MismatchError, FileFormatError, ValidationError, EntryMissingError)
 
 
-def _validate_folder(dataset, submission):
-    """Auxiliary function to validate()"""
-    print(f'> Validating {submission}')
+def _validate_file(source_file, submission):
+    """Ensure a file has the correct format
 
-    # retrieve the required filenames that must be present in the submission
-    required = set(f.stem for f in dataset.glob('*.wav'))
-    if not required:
-        raise ValidationError(f'{dataset} contains no .wav files')
+    Verifies that a feature file is a 2D numpy array of floats.
 
-    # retrieve the submitted files
-    submitted = set(f.stem for f in submission.glob('*.txt'))
-    if not submitted:
-        raise ValidationError(f'{submission} contains no .txt files')
+    :param source_file: input file
+    :param submission: location of submitted files
+    :return: a pair (error, ncols)
 
-    # ensure each required file is present in the submission
-    if submitted != required:
-        raise MismatchError('files mismatch', required, submitted)
+    """
+    try:
+        target_file = submission / (source_file + '.txt')
+        if not target_file.is_file():
+            raise EntryMissingError(
+                source=source_file, expected=target_file)
 
-    # ensure each submitted file has a correct format ad the number of columns
-    # is constant across files
-    ncols = None
-    for filename in submitted:
-        filename = submission / (filename + '.txt')
         try:
-            array = np.loadtxt(filename)
+            array = np.loadtxt(str(target_file))
         except Exception:
-            raise FileFormatError(filename, 'not a valid numpy array')
+            raise FileFormatError(target_file, 'not a valid numpy array')
 
         if array.dtype != np.dtype('float'):
-            raise FileFormatError(filename, 'not a float array')
+            raise FileFormatError(target_file, "not a float array")
 
         if array.ndim != 2:
-            raise FileFormatError(filename, 'not a 2D array')
+            raise FileFormatError(target_file, 'not a 2D array')
 
-        if ncols and array.shape[1] != ncols:
-            raise FileFormatError(
-                filename, f'expected {ncols} columns but get {array.shape[1]}')
-        ncols = array.shape[1]
+    except ValidationError as error:
+        return str(error), None
+
+    return None, array.shape[1]
 
 
-def validate(submission, dataset, kind):
+def validate(submission, dataset, kind, subset, njobs=1):
     """Raises a ValidationError if the `submission` is not valid
 
     The submission folder must include <filename>.txt files, each file
@@ -66,6 +60,10 @@ def validate(submission, dataset, kind):
         The root path of the ZR2021 dataset.
     kind: str
         Must be 'dev' or 'test'.
+    subset: str
+        Must be 'synthetic' or 'librispeech'
+    njobs : int
+        Number of parallel processes to use
 
     Raises
     ------
@@ -81,17 +79,58 @@ def validate(submission, dataset, kind):
         raise ValueError(
             f'kind must be "dev" or "test", it is {kind}')
 
-    submission = pathlib.Path(submission)
+    if subset not in ('librispeech', 'synthetic'):
+        raise ValueError(
+            f'subset must be "librispeech" or "synthetic", it is {subset}')
+
+    submission = pathlib.Path(submission) / kind / subset
     if not submission.is_dir():
         raise ValueError(
             f'{kind} submission directory not found: {submission}')
 
-    dataset = pathlib.Path(dataset) / f'semantic/{kind}'
+    dataset = pathlib.Path(dataset) / f'semantic/{kind}/{subset}'
     if not dataset.is_dir():
         raise ValueError(f'dataset not found: {dataset}')
 
-    for folder in ('synthetic', 'librispeech'):
-        _validate_folder(dataset / folder, submission / kind / folder)
+    # retrieve the required filenames that must be present in the submission
+    required = set(f.stem for f in dataset.glob('*.wav'))
+    if not required:
+        raise ValidationError(f'{dataset} contains no .wav files')
+
+    # retrieve the submitted files
+    submitted = set(submission.glob('*'))
+    if not submitted:
+        raise ValidationError(f'{submission} contains no files')
+
+    # ensure we have only .txt files in submission
+    no_txt_files = [str(f) for f in submitted if f.suffix != '.txt']
+    if no_txt_files:
+        raise MismatchError('extra files found', [], no_txt_files)
+
+    # ensure each required file is present in the submission
+    submitted = set(f.stem for f in submitted)
+    if submitted != required:
+        raise MismatchError('files mismatch', required, submitted)
+
+    # ensure each submitted file has a correct format ad the number of columns
+    # is constant across files
+    errors, ncols = zip(*joblib.Parallel(n_jobs=njobs)(
+        joblib.delayed(_validate_file)(f, submission) for f in submitted))
+
+    # ensure there are no detected errors
+    errors = [e for e in errors if e]
+    if errors:
+        for e in errors[:10]:
+            print(f'ERROR: {e}')
+        if len(errors) > 10:
+            print('ERROR: ... and {len(errors - 10)} more!')
+        raise ValidationError(f'error detected in phonetic {kind}')
+
+    # ensure all submitted files have the same number of columns
+    if len(set(ncols)) != 1:
+        raise ValidationError(
+            f'all files must have the same number of columns '
+            f'but have: {set(ncols)}')
 
 
 class EvaluationHelper:

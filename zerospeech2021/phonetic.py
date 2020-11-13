@@ -8,6 +8,7 @@ from enum import Enum
 
 import numpy as np
 import yaml
+import joblib
 
 from zerospeech2021 import exception
 from zerospeech2021.phonetic_eval import eval_ABX
@@ -81,86 +82,80 @@ def get_submitted_files(submission_directory, _set):
     """ Returns a list of all the files in a set """
     res = []
     for s in LIBRISPEECH_SETS[_set]:
-        res.append((submission_directory / s).rglob("*.txt"))
+        res.append((submission_directory / s).rglob("*"))
     return list(chain(*res))
 
 
-def verify_feature_file(feature_path: Path):
-    """ Verifies that a feature file is a 2D numpy array of floats
+def _validate_file(source_file, submission, dataset):
+    """Ensure a file has the correct format
 
-    :raises exception.FileFormatError if the types are not correct
-    :raises ValueError if the file is not a valid numpy array
+    Verifies that a feature file is a 2D numpy array of floats and it matches a
+    file in the dataset.
 
-    :return: the number of columns in the array
+    :param source_file: input file from dataset
+    :param submission: location of submitted files
+    :param dataset: location of dataset
+
+    :return: a pair (target_file, ncols), where target_file is the file in the
+      submission directory and ncols is the number of columns in the array.
+
+    :raises exception.EntryMissingError if an entry is not present
+
     """
     try:
-        array = np.loadtxt(str(feature_path))
-    except Exception:
-        raise exception.FileFormatError(
-            feature_path, 'not a valid numpy array')
+        target_file = submission / source_file.relative_to(dataset)
+        target_file = target_file.with_suffix('.txt')
+        if not target_file.is_file():
+            raise exception.EntryMissingError(
+                source=source_file, expected=target_file)
 
-    if array.dtype != np.dtype('float'):
-        raise exception.FileFormatError(
-            feature_path, "array loaded is not dtype = float")
-
-    if array.ndim != 2:
-        raise exception.FileFormatError(
-            feature_path, 'not a 2D array')
-
-    return array.shape[1]
-
-
-def check_entries(
-        input_files, submission_directory, dataset_directory, _set):
-    """ Checks all entries from the input dataset to see if they match they
-        exist in the submitted set.
-    :param input_files: list of input files (from dataset)
-    :param submission_directory: location of submitted files
-    :param dataset_directory: location of dataset
-    :param _set: type of subset (test, dev)
-    :return: a list of valid entries
-    :raises exception.EntryMissingError if an entry is not present
-    """
-    ncols = None
-    valid_entries = []
-    for file in input_files:
-        pure_path = file.relative_to(dataset_directory)
-        txt_file = submission_directory / pure_path
-        txt_file = txt_file.with_suffix('.txt')
-        if not txt_file.is_file():
-            raise exception.EntryMissingError(source=file, expected=txt_file)
-
-        current_ncols = verify_feature_file(txt_file)
-        if ncols and current_ncols != ncols:
+        try:
+            array = np.loadtxt(str(target_file))
+        except Exception:
             raise exception.FileFormatError(
-                txt_file, f'expected {ncols} columns but get {current_ncols}')
-        ncols = current_ncols
+                target_file, 'not a valid numpy array')
 
-        valid_entries.append(txt_file)
-    return valid_entries
+        if array.dtype != np.dtype('float'):
+            raise exception.FileFormatError(
+                target_file, "array loaded is not dtype = float")
+
+        if array.ndim != 2:
+            raise exception.FileFormatError(
+                target_file, 'not a 2D array')
+    except exception.ValidationError as error:
+        return str(error), None, None
+
+    return None, target_file, array.shape[1]
 
 
-def validate(submission, dataset, _set):
-    """  Validate a subset of the submissions for the phonetic task
+def validate(submission, dataset, kind, njobs=1):
+    """Validate a subset of the submissions for the phonetic task
 
     :param submission_directory: location of submissions
     :param dataset_directory: location of data
-    :param file_type: entry files (wav | flac)
-    :param _set: subset type (dev | test)
+    :param kind: subset type (dev | test)
+    :param njobs: number of paralle processes to use for validation
+
+    :raise ValidationError: if the submission is not valid
+
     """
+    if kind not in LIBRISPEECH_SETS.keys():
+        raise ValueError(f'kind must be "dev" or "test", it is {kind}')
 
-    if _set not in LIBRISPEECH_SETS.keys():
-        raise ValueError(f'kind must be "dev" or "test", it is {_set}')
-
-    input_files = get_input_files(dataset, _set, "wav")
+    input_files = get_input_files(dataset, kind, "wav")
     if not input_files:
         raise exception.ValidationError(
             f'found no wav files in {dataset}')
 
-    submitted_files = get_submitted_files(submission, _set)
-    if not input_files:
+    submitted_files = get_submitted_files(submission, kind)
+    if not submitted_files:
         raise exception.ValidationError(
-            f'found no .txt files in {submission}')
+            f'found no files in {submission}')
+
+    # ensure we have only .txt files in submission
+    no_txt_files = [str(f) for f in submitted_files if f.suffix != '.txt']
+    if no_txt_files:
+        raise exception.MismatchError('extra files found', [], no_txt_files)
 
     # ensure that there are no duplicates
     duplicates = [
@@ -170,8 +165,25 @@ def validate(submission, dataset, _set):
         raise exception.MismatchError('duplicates found', [], duplicates)
 
     # check that necessary files are present and valid
-    valid_entries = check_entries(
-        input_files, submission, dataset, _set)
+    valid_entries = joblib.Parallel(n_jobs=njobs)(
+        joblib.delayed(_validate_file)(f, submission, dataset)
+        for f in input_files)
+    errors, valid_entries, ncols = zip(*valid_entries)
+
+    # ensure there are no detected errors
+    errors = [e for e in errors if e]
+    if errors:
+        for e in errors[:10]:
+            print(f'ERROR: {e}')
+        if len(errors) > 10:
+            print('ERROR: ... and {len(errors - 10)} more!')
+        raise exception.ValidationError(f'error detected in phonetic {kind}')
+
+    # ensure all submitted files have the same number of columns
+    if len(set(ncols)) != 1:
+        raise exception.ValidationError(
+            f'all files must have the same number of columns '
+            f'but have: {set(ncols)}')
 
     if collections.Counter(submitted_files) != collections.Counter(valid_entries):
         raise exception.MismatchError(
@@ -181,12 +193,12 @@ def validate(submission, dataset, _set):
 def evaluate(features_location: Path, dataset: Path, output_dir: Path, kind):
     meta_values = load_meta_args(features_location.parents[0])
     metric = meta_values.get("metric", 'cosine')
-    feature_size = meta_values.get("feature_size", 0.01)
+    frame_shift = meta_values.get("feature_size", 0.01)
 
     for _set in LIBRISPEECH_SETS[kind]:
         arg_obj = AbxArguments(
-            path_data=str(features_location / _set), path_item_file=f'{(dataset / _set / f"{_set}.item")}',
-            distance_mode=f"{metric}", feature_size=feature_size,
-            out=f"{output_dir}"
-        )
+            path_data=str(features_location / _set),
+            path_item_file=f'{(dataset / _set / f"{_set}.item")}',
+            distance_mode=f"{metric}", feature_size=frame_shift,
+            out=f"{output_dir}")
         eval_ABX.main(arg_obj=arg_obj)

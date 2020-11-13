@@ -7,6 +7,7 @@ dependencies:
   - click
   - cudatoolkit=9.2
   - cython
+  - joblib
   - numpy
   - pandas
   - pip

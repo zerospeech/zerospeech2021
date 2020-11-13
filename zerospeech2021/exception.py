@@ -4,10 +4,10 @@
 def _print_sublist(entries, num=3):
     """Returns a string containing the `n` first elements of `entries`"""
     if len(entries) <= num:
-        return '[' + ', '.join(entries) + ']'
+        return '[' + ', '.join(str(e) for e in entries) + ']'
 
     return (
-        '[' + ', '.join(list(entries)[:num]) +
+        '[' + ', '.join(list(str(e) for e in entries)[:num]) +
         f', ...] and {len(entries) - num} more')
 
 

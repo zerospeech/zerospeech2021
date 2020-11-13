@@ -1,5 +1,7 @@
 """Validation of meta.yaml"""
 
+import numpy as np
+import scipy.spatial
 import yaml
 
 from zerospeech2021.exception import ValidationError, MismatchError
@@ -35,6 +37,16 @@ def _validate_entry(meta, name, expected_type, values=None, prefix=None):
         raise ValidationError(f'{prefix}{name} must not be an empty string')
 
 
+def _validate_scipy_metric(metric):
+    """"Raises a ValidationError if `metric` is not a valid metric in scipy"""
+    X = np.ones((5, 2))
+    Y = np.ones((5, 2))
+    try:
+        scipy.spatial.distance.cdist(X, Y, metric)
+    except:
+        raise ValidationError(f'invalid metric for semantic: {metric}')
+
+
 def validate(submission):
     """Validation of the meta.yaml in submission
 
@@ -49,7 +61,7 @@ def validate(submission):
         parameters:
           phonetic:
             metric: <str>, "cosine", "euclidean", "kl" or "kl_symmetric"
-            features_size: <float>
+            frame_shift: <float>
           semantic:
             metric: <str>
             pooling: <str>, "min", "max" or "mean"
@@ -61,8 +73,6 @@ def validate(submission):
 
     """
     meta_file = submission / 'meta.yaml'
-
-    print(f'Validating {meta_file}...')
 
     if not meta_file.is_file():
         raise ValidationError("missing meta.yaml file")
@@ -91,11 +101,11 @@ def validate(submission):
         {'phonetic': (dict, None), 'semantic': (dict, None)},
         prefix='parameters')
 
-    # parameters/phonetic entries
+    # parameters/phonetic level
     _validate_entries(
         meta['parameters']['phonetic'],
         {'metric': (str, ['cosine', 'euclidean', 'kl', 'kl_symmetric']),
-         'features_size': (float, None)},
+         'frame_shift': (float, None)},
         prefix='parameters/phonetic')
 
     # parameters/semantic level
@@ -104,3 +114,7 @@ def validate(submission):
         {'metric': (str, None),
          'pooling': (str, ['min', 'max', 'mean'])},
         prefix='parameters/semantic')
+
+    _validate_scipy_metric(meta['parameters']['semantic']['metric'])
+
+    return meta['open_source']
