@@ -54,22 +54,6 @@ class AbxArguments:
     out: Optional[str] = None
 
 
-def load_meta_args(features_location: Path):
-    with (features_location / 'meta.yaml').open() as fp:
-        meta = yaml.safe_load(fp)
-    try:
-        metric = meta['parameters']['phonetic']['metric']
-    except KeyError:
-        raise ValueError("The metric must be specified in the meta.yaml phonetic section")
-
-    try:
-        features_size = float(meta['parameters']['phonetic']['features_size'])
-
-        return dict(features_size=features_size, metric=metric)
-    except KeyError:
-        raise ValueError("feature size must be defined in the meta.yaml")
-
-
 def get_input_files(dataset_directory, _set, file_type):
     """ Returns a list of all the files in a set """
     res = []
@@ -190,15 +174,32 @@ def validate(submission, dataset, kind, njobs=1):
             'mismatch in filenames', valid_entries, submitted_files)
 
 
-def evaluate(features_location: Path, dataset: Path, output_dir: Path, kind):
-    meta_values = load_meta_args(features_location.parents[0])
-    metric = meta_values.get("metric", 'cosine')
-    frame_shift = meta_values.get("feature_size", 0.01)
+def evaluate(submission, dataset, output_dir, kind, metric, frame_shift):
+    """Writes the phonetic evaluation results to `output_dir`
 
-    for _set in LIBRISPEECH_SETS[kind]:
+    Parameters
+    ----------
+    submission : path
+        The directory where the phonetic submission is stored (expect
+        subdirectories dev-clean, dev-other, etc)
+    dataset : path
+        The directory where the phonetic dataset is stored
+    output_dir : path
+        The directory where to write results
+    kind : str
+        Must be 'dev' or 'test'
+    metric : str
+        Must be 'cosine', 'euclidean', 'kl' or 'kl_symmetric'
+    frame_shift : float
+        The shift between two features frames in s.
+
+    """
+    for subkind in LIBRISPEECH_SETS[kind]:
+        print(f'Evaluating phonetic {subkind}')
         arg_obj = AbxArguments(
-            path_data=str(features_location / _set),
-            path_item_file=f'{(dataset / _set / f"{_set}.item")}',
-            distance_mode=f"{metric}", feature_size=frame_shift,
-            out=f"{output_dir}")
+            path_data=str(submission / subkind),
+            path_item_file=str(dataset / subkind / f'{subkind}.item'),
+            distance_mode=metric,
+            feature_size=frame_shift,
+            out=str(output_dir))
         eval_ABX.main(arg_obj=arg_obj)

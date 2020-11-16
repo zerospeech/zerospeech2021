@@ -179,7 +179,7 @@ def main(argv=None, arg_obj=None):
         state_dict = torch.load(args.path_checkpoint)
         feature_maker = load_cpc_features(state_dict)
         feature_maker.cuda()
-        def feature_function(x): return build_feature_from_file(x, feature_maker)
+        feature_function = lambda x: build_feature_from_file(x, feature_maker)
 
     # Modes
     if args.mode == 'all':

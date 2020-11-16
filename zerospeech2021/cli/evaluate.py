@@ -19,7 +19,7 @@ def eval_lexical(dataset, submission, output, kinds):
         print(f'Evaluating lexical {kind}...')
 
         gold_file = dataset / 'lexical' / kind / 'gold.csv'
-        submission_file = submission / 'lexical' / f'{kind}_submission.txt'
+        submission_file = submission / 'lexical' / f'{kind}.txt'
 
         by_pair, by_frequency, by_length = lexical.evaluate(
             gold_file, submission_file)
@@ -60,7 +60,7 @@ def eval_syntactic(dataset, submission, output, kinds):
         print(f'Evaluating syntactic {kind}...')
 
         gold_file = dataset / 'syntactic' / kind / 'gold.csv'
-        submission_file = submission / 'syntactic' / f'{kind}_submission.txt'
+        submission_file = submission / 'syntactic' / f'{kind}.txt'
 
         by_pair, by_type = syntactic.evaluate(gold_file, submission_file)
         by_pair.to_csv(
@@ -72,12 +72,14 @@ def eval_syntactic(dataset, submission, output, kinds):
 
 
 def eval_phonetic(dataset, submission, output, kinds):
-    phonetic_dataset = dataset / 'phonetic'
-    features_location = submission / 'phonetic'
+    meta = yaml.safe_load((submission / 'meta.yaml').open('r').read())
+    metric = meta['parameters']['phonetic']['metric']
+    frame_shift = meta['parameters']['phonetic']['frame_shift']
 
     for kind in kinds:  # 'dev' or 'test'
-        print(f'Evaluating phonetic {kind}...')
-        phonetic.evaluate(features_location, phonetic_dataset, output, kind)
+        phonetic.evaluate(
+            submission / 'phonetic', dataset / 'phonetic',
+            output, kind, metric, frame_shift)
 
 
 @click.command(epilog='See https://zerospeech.com/2021 for more details')

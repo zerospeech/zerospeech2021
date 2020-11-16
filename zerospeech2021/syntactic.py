@@ -142,7 +142,7 @@ def load_data(gold_file, submission_file):
     # 'phones' and 'filename' as we don't use them for evaluation
     data = pandas.concat([gold, score], axis=1)
     data.reset_index(inplace=True)
-    data.drop(columns=['filename'], inplace=True)
+    data.drop(columns=['index'], inplace=True)
 
     # going from a word per line to a pair (word, non word) per line
     data = pandas.concat([
