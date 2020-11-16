@@ -9,6 +9,7 @@ import tempfile
 import zipfile
 
 import click
+import pandas
 import yaml
 
 from zerospeech2021 import phonetic, lexical, syntactic, semantic
@@ -76,10 +77,14 @@ def eval_phonetic(dataset, submission, output, kinds):
     metric = meta['parameters']['phonetic']['metric']
     frame_shift = meta['parameters']['phonetic']['frame_shift']
 
+    results = []
     for kind in kinds:  # 'dev' or 'test'
-        phonetic.evaluate(
+        results.append(phonetic.evaluate(
             submission / 'phonetic', dataset / 'phonetic',
-            output, kind, metric, frame_shift)
+            kind, metric, frame_shift))
+
+    pandas.concat(results).to_csv(
+        output / 'score_phonetic.csv', index=False, float_format='%.4f')
 
 
 @click.command(epilog='See https://zerospeech.com/2021 for more details')

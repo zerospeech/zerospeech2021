@@ -1,13 +1,12 @@
 """ Phonetic task zerospeech 2021 """
 import collections
 from dataclasses import dataclass
-from pathlib import Path
 from itertools import chain
 from typing import Optional
 from enum import Enum
 
 import numpy as np
-import yaml
+import pandas
 import joblib
 
 from zerospeech2021 import exception
@@ -174,7 +173,7 @@ def validate(submission, dataset, kind, njobs=1):
             'mismatch in filenames', valid_entries, submitted_files)
 
 
-def evaluate(submission, dataset, output_dir, kind, metric, frame_shift):
+def evaluate(submission, dataset, kind, metric, frame_shift):
     """Writes the phonetic evaluation results to `output_dir`
 
     Parameters
@@ -193,13 +192,26 @@ def evaluate(submission, dataset, output_dir, kind, metric, frame_shift):
     frame_shift : float
         The shift between two features frames in s.
 
+    Returns
+    -------
+    score : pandas.DataFrame
+        A data frame with the ABX score obtained for each combination of
+        {dev, test}, {clean, other} and {across, within}.
+
     """
+    results = {}
     for subkind in LIBRISPEECH_SETS[kind]:
         print(f'Evaluating phonetic {subkind}')
         arg_obj = AbxArguments(
             path_data=str(submission / subkind),
             path_item_file=str(dataset / subkind / f'{subkind}.item'),
             distance_mode=metric,
-            feature_size=frame_shift,
-            out=str(output_dir))
-        eval_ABX.main(arg_obj=arg_obj)
+            feature_size=frame_shift)
+
+        results[subkind] = eval_ABX.main(arg_obj=arg_obj)
+
+    results2 = [
+        (dset.split('-')[0], dset.split('-')[1], kind, score)
+        for dset, v in results.items() for kind, score in v.items()]
+    return pandas.DataFrame(
+        results2, columns=['dataset', 'sub-dataset', 'type', 'score'])

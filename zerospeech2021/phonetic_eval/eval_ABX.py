@@ -199,23 +199,4 @@ def main(argv=None, arg_obj=None):
                  max_x_across=args.max_x_across,
                  max_size_group=args.max_size_group)
 
-    out_dir = Path(args.path_checkpoint).parent if args.out is None \
-        else Path(args.out)
-    out_dir.mkdir(exist_ok=True)
-
-    path_score = out_dir / 'ABX_scores.json'
-    with open(path_score, 'w') as file:
-        json.dump(scores, file, indent=2)
-
-    path_args = out_dir / 'ABX_args.json'
-    with open(path_args, 'w') as file:
-        json.dump(vars(args), file, indent=2)
-
-
-def run_as_cmd():
-    args = sys.argv[1:]
-    main(args)
-
-
-if __name__ == "__main__":
-    run_as_cmd()
+    return scores
