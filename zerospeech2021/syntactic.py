@@ -219,7 +219,7 @@ def evaluate_by_type(by_pair):
         following columns: 'type', 'score'.
 
     """
-    return by_pair.score.groupby([by_pair.type, by_pair.subtype]).agg(
+    return by_pair.score.groupby([by_pair['type']]).agg(
         n='count', score='mean', std='std').reset_index()
 
 
@@ -250,10 +250,8 @@ def evaluate(gold_file, submission_file):
 
     """
     data = load_data(gold_file, submission_file)
-    print(data.head())
 
     by_pair = evaluate_by_pair(data)
-    print(by_pair.head())
     by_type = evaluate_by_type(by_pair)
     by_pair.drop(['type', 'subtype'], axis=1, inplace=True)
 
