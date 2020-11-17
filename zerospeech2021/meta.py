@@ -39,10 +39,9 @@ def _validate_entry(meta, name, expected_type, values=None, prefix=None):
 
 def _validate_scipy_metric(metric):
     """"Raises a ValidationError if `metric` is not a valid metric in scipy"""
-    X = np.ones((5, 2))
-    Y = np.ones((5, 2))
     try:
-        scipy.spatial.distance.cdist(X, Y, metric)
+        scipy.spatial.distance.cdist(
+            np.ones((5, 2)), np.ones((5, 2)), metric)
     except:
         raise ValidationError(f'invalid metric for semantic: {metric}')
 
@@ -58,6 +57,7 @@ def validate(submission):
         description: <str>
         open_source: <bool>
         train_set: <str>
+        budget: <float>
         parameters:
           phonetic:
             metric: <str>, "cosine", "euclidean", "kl" or "kl_symmetric"
@@ -93,6 +93,7 @@ def validate(submission):
          'description': (str, None),
          'open_source': (bool, None),
          'train_set': (str, None),
+         'budget': (float, None),
          'parameters': (dict, None)})
 
     # parameters entries
