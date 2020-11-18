@@ -201,7 +201,10 @@ def evaluate(submission, dataset, kind, metric, frame_shift):
     """
     results = {}
     for subkind in LIBRISPEECH_SETS[kind]:
-        print(f'Evaluating phonetic {subkind}')
+        print(
+            f'Evaluating phonetic {subkind} '
+            f'(metric={metric}, frame_shift={frame_shift})')
+
         arg_obj = AbxArguments(
             path_data=str(submission / subkind),
             path_item_file=str(dataset / subkind / f'{subkind}.item'),

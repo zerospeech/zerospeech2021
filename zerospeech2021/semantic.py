@@ -6,6 +6,7 @@ import pathlib
 import numpy as np
 import pandas
 import scipy.spatial
+import scipy.stats
 import joblib
 
 from zerospeech2021.exception import (
@@ -195,6 +196,26 @@ class EvaluationHelper:
             metric=self._metric).mean()
 
 
+def _correlation(df):
+    # choose 'similarity' or 'relatedness' column (the one with no NaN)
+    human = df.similarity if df.relatedness.hasnans else df.relatedness
+    assert not human.hasnans
+
+    # return spearman correlation and pvalue
+    return scipy.stats.spearmanr(human.to_numpy(), df.score.to_numpy())
+
+
+def evaluate_correlation(pairs):
+    """"Returns the Spearman's correlation between human and machine scores"""
+    # for each (type/dataset) combination, compute spearman correlation and pvalue
+    serie = pairs.groupby([pairs['type'], pairs['dataset']]).apply(_correlation)
+
+    # transfrom raw result in a usable dataframe
+    frame = serie.to_frame().rename(columns={0: 'spearman'}).reset_index()
+    frame[['correlation', 'pvalue']] = pandas.DataFrame(frame.spearman.tolist())
+    return frame.drop(['spearman'], axis=1)
+
+
 def evaluate(gold_file, pairs_file, submission_dir, metric, pooling):
     """Returns the score on each words pair of the dataset
 
@@ -218,6 +239,10 @@ def evaluate(gold_file, pairs_file, submission_dir, metric, pooling):
     pairs : pandas.DataFrame
         The same content as in `pairs_file` with an additional 'score' column
         containing the evaluated machine score for each pairs of words.
+    correlation : pandas.DataFrame
+        The Spearman's correlation between human judgements and machine scores
+        on each dataset. The data frame contains the following columns :
+        'type', 'dataset', 'correlation' and 'pvalue'.
 
     Raises
     ------
@@ -242,4 +267,7 @@ def evaluate(gold_file, pairs_file, submission_dir, metric, pooling):
 
     # compute distance for each pair in the dataset
     pairs['score'] = [helper.distance(pair) for _, pair in pairs.iterrows()]
-    return pairs
+
+    # compute correlations
+    correlation = evaluate_correlation(pairs)
+    return pairs, correlation

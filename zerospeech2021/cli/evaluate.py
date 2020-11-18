@@ -15,6 +15,11 @@ import yaml
 from zerospeech2021 import phonetic, lexical, syntactic, semantic
 
 
+def write_csv(frame, filename):
+    frame.to_csv(filename, index=False, float_format='%.4f')
+    print(f'  > Wrote {filename}')
+
+
 def eval_lexical(dataset, submission, output, kinds):
     for kind in kinds:  # 'dev' or 'test'
         print(f'Evaluating lexical {kind}...')
@@ -25,15 +30,12 @@ def eval_lexical(dataset, submission, output, kinds):
         by_pair, by_frequency, by_length = lexical.evaluate(
             gold_file, submission_file)
 
-        by_pair.to_csv(
-            output / f'score_lexical_{kind}_by_pair.csv',
-            index=False, float_format='%.4f')
-        by_frequency.to_csv(
-            output / f'score_lexical_{kind}_by_frequency.csv',
-            index=False, float_format='%.4f')
-        by_length.to_csv(
-            output / f'score_lexical_{kind}_by_length.csv',
-            index=False, float_format='%.4f')
+        write_csv(
+            by_pair, output / f'score_lexical_{kind}_by_pair.csv')
+        write_csv(
+            by_frequency, output / f'score_lexical_{kind}_by_frequency.csv')
+        write_csv(
+            by_length, output / f'score_lexical_{kind}_by_length.csv')
 
 
 def eval_semantic(dataset, submission, output, kinds):
@@ -48,12 +50,14 @@ def eval_semantic(dataset, submission, output, kinds):
 
         gold_file = dataset / 'semantic' / kind / 'gold.csv'
         pairs_file = dataset / 'semantic' / kind / 'pairs.csv'
-        score = semantic.evaluate(
+        pairs, correlation = semantic.evaluate(
             gold_file, pairs_file, submission / 'semantic' / kind,
             metric, pooling)
-        score.to_csv(
-            output / f'score_semantic_{kind}.csv',
-            index=False, float_format='%.4f')
+
+        write_csv(
+            pairs, output / f'score_semantic_{kind}_pairs.csv')
+        write_csv(
+            correlation, output / f'score_semantic_{kind}_correlation.csv')
 
 
 def eval_syntactic(dataset, submission, output, kinds):
@@ -64,12 +68,11 @@ def eval_syntactic(dataset, submission, output, kinds):
         submission_file = submission / 'syntactic' / f'{kind}.txt'
 
         by_pair, by_type = syntactic.evaluate(gold_file, submission_file)
-        by_pair.to_csv(
-            output / f'score_syntactic_{kind}_by_pair.csv',
-            index=False, float_format='%.4f')
-        by_type.to_csv(
-            output / f'score_syntactic_{kind}_by_type.csv',
-            index=False, float_format='%.4f')
+
+        write_csv(
+            by_pair, output / f'score_syntactic_{kind}_by_pair.csv')
+        write_csv(
+            by_type, output / f'score_syntactic_{kind}_by_type.csv')
 
 
 def eval_phonetic(dataset, submission, output, kinds):
@@ -83,8 +86,7 @@ def eval_phonetic(dataset, submission, output, kinds):
             submission / 'phonetic', dataset / 'phonetic',
             kind, metric, frame_shift))
 
-    pandas.concat(results).to_csv(
-        output / 'score_phonetic.csv', index=False, float_format='%.4f')
+    write_csv(pandas.concat(results), output / 'score_phonetic.csv')
 
 
 @click.command(epilog='See https://zerospeech.com/2021 for more details')

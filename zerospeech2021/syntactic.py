@@ -215,7 +215,7 @@ def evaluate_by_type(by_pair):
     Returns
     -------
     by_type : pandas.DataFrame
-        The score collapsed on word length, the data frame has the
+        The score collapsed on types, the data frame has the
         following columns: 'type', 'score'.
 
     """
