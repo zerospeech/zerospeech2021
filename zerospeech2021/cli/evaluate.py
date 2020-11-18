@@ -38,7 +38,7 @@ def eval_lexical(dataset, submission, output, kinds):
             by_length, output / f'score_lexical_{kind}_by_length.csv')
 
 
-def eval_semantic(dataset, submission, output, kinds):
+def eval_semantic(dataset, submission, output, kinds, njobs):
     # load metric and poling parameters from meta.yaml
     meta = yaml.safe_load((submission / 'meta.yaml').open('r').read())
     metric = meta['parameters']['semantic']['metric']
@@ -52,7 +52,7 @@ def eval_semantic(dataset, submission, output, kinds):
         pairs_file = dataset / 'semantic' / kind / 'pairs.csv'
         pairs, correlation = semantic.evaluate(
             gold_file, pairs_file, submission / 'semantic' / kind,
-            metric, pooling)
+            metric, pooling, njobs=njobs)
 
         write_csv(
             pairs, output / f'score_semantic_{kind}_pairs.csv')
@@ -93,6 +93,9 @@ def eval_phonetic(dataset, submission, output, kinds):
 @click.argument('dataset', type=pathlib.Path)
 @click.argument('submission', type=pathlib.Path)
 @click.option(
+    '-j', '--njobs', default=1, type=int,
+    help='Number of parallel jobs (default to 1)')
+@click.option(
     '-o', '--output-directory', type=pathlib.Path,
     default='.', show_default=True,
     help="Directory to store output results")
@@ -101,7 +104,7 @@ def eval_phonetic(dataset, submission, output, kinds):
 @click.option('--no-syntactic', help="Skip syntactic part", is_flag=True)
 @click.option('--no-semantic', help="Skip semantic part", is_flag=True)
 def evaluate(
-        dataset, submission, output_directory,
+        dataset, submission, njobs, output_directory,
         no_phonetic, no_lexical, no_syntactic, no_semantic):
     """Evaluate a submission to the Zero Resource Speech Challenge 2021
 
@@ -150,7 +153,7 @@ def evaluate(
             eval_lexical(dataset, submission, output_directory, kinds)
 
         if not no_semantic:
-            eval_semantic(dataset, submission, output_directory, kinds)
+            eval_semantic(dataset, submission, output_directory, kinds, njobs)
 
         if not no_syntactic:
             eval_syntactic(dataset, submission, output_directory, kinds)
