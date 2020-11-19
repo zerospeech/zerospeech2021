@@ -113,7 +113,7 @@ def validate(submission):
     _validate_entries(
         meta['parameters']['semantic'],
         {'metric': (str, None),
-         'pooling': (str, ['min', 'max', 'mean'])},
+         'pooling': (str, ['min', 'max', 'mean', 'sum', 'last', 'lastlast'])},
         prefix='parameters/semantic')
 
     _validate_scipy_metric(meta['parameters']['semantic']['metric'])

@@ -157,9 +157,6 @@ def _compute_distance(pair, gold, pool, metric):
     X = np.asarray(pool[pool['filename'].isin(tokens_1)]['pooling'].tolist())
     Y = np.asarray(pool[pool['filename'].isin(tokens_2)]['pooling'].tolist())
 
-    # print(f'{pair.word_1}: {tokens_1}, {X.shape}')
-    # print(f'{pair.word_2}: {tokens_2}, {Y.shape}')
-
     # compute the mean distance across all pairs of tokens after pooling
     return scipy.spatial.distance.cdist(X, Y, metric=metric).mean()
 
@@ -169,22 +166,59 @@ def _correlation(df):
     human = df.similarity if df.relatedness.hasnans else df.relatedness
     assert not human.hasnans
 
-    # return spearman correlation and pvalue
-    return scipy.stats.spearmanr(human.to_numpy(), df.score.to_numpy())
+    # return spearman correlation. Hhumans score are similarity (high when
+    # close) so we take the opposite to have a quantity close to a distance
+    # (low when close)
+    return 100 * scipy.stats.spearmanr(
+        - human.to_numpy(), df.score.to_numpy())[0]
 
 
 def _compute_correlation(pairs):
     """"Returns the Spearman's correlation between human and machine scores"""
-    # for each (type/dataset) combination, compute spearman correlation and pvalue
+    # for each (type/dataset) combination, compute spearman correlation
     serie = pairs.groupby([pairs['type'], pairs['dataset']]).apply(_correlation)
 
     # transfrom raw result in a usable dataframe
-    frame = serie.to_frame().rename(columns={0: 'spearman'}).reset_index()
-    frame[['correlation', 'pvalue']] = pandas.DataFrame(frame.spearman.tolist())
-    return frame.drop(['spearman'], axis=1)
+    return serie.to_frame().rename(columns={0: 'correlation'}).reset_index()
 
 
 def evaluate(gold_file, pairs_file, submission_dir, metric, pooling, njobs=1):
+    """Returns the distance of each words pair and overall correlations
+
+    Parameters
+    ----------
+    gold_file : path
+        The gold file (csv format) for the dev or test semantic dataset.
+    pairs_file : path
+        The pairs file (csv format) corresponding to `gold_file` (dev or test).
+    submission_dir : path
+        The submission directry containing the embeddings to evaluate.
+    metric : str
+        The metric to use for distance computation, must be a metric supported
+        by `scipy.spatial.distance.cdist` (see
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.cdist.html)
+    pooling : str
+        The pooling method to use, must be 'min', 'max', 'mean', 'sum', 'last'
+        or 'lastlast'.
+
+    Returns
+    -------
+    pairs : pandas.DataFrame
+        The same content as in `pairs_file` with an additional 'score' column
+        containing the evaluated machine scores for each pair of words.
+    correlation : pandas.DataFrame
+        The Spearman correlation between human judgements and machine scores on
+        each dataset. The frame contains the columns 'type', 'dataset' and
+        'correlation'.
+
+    Raises
+    ------
+    ValueError
+        If one of the input parameters is not valid.
+    OSError
+        If a file defined in `gold_file` is not found in `submission_dir`.
+
+    """
     # ensures input arguments are correct
     for input_file in (gold_file, pairs_file):
         if not pathlib.Path(input_file).is_file():
@@ -197,7 +231,10 @@ def evaluate(gold_file, pairs_file, submission_dir, metric, pooling, njobs=1):
         _pooling_function = {
             'max': lambda x: np.max(x, axis=0),
             'mean': lambda x: np.mean(x, axis=0),
-            'min': lambda x: np.min(x, axis=0)}[pooling]
+            'min': lambda x: np.min(x, axis=0),
+            'sum': lambda x: np.sum(x, axis=0),
+            'last': lambda x: x[-1],
+            'lastlast': lambda x: x[-2]}[pooling]
     except KeyError:
         raise ValueError('pooling method must be "max", "min" or "mean"')
 
