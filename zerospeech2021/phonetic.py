@@ -159,7 +159,7 @@ def validate(submission, dataset, kind, njobs=1):
         for e in errors[:10]:
             print(f'ERROR: {e}')
         if len(errors) > 10:
-            print('ERROR: ... and {len(errors - 10)} more!')
+            print(f'ERROR: ... and {len(errors) - 10} more!')
         raise exception.ValidationError(f'error detected in phonetic {kind}')
 
     # ensure all submitted files have the same number of columns
