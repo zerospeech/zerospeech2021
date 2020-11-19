@@ -154,8 +154,8 @@ class ABXFeatureLoader:
 
         totSize = 0
 
-        print("Building the input features...")
-        bar = progressbar.ProgressBar(maxval=len(seqList))
+        print("  > Building the input features...")
+        bar = progressbar.ProgressBar(prefix='  > ', maxval=len(seqList))
         bar.start()
 
         for index, vals in enumerate(seqList):
@@ -190,7 +190,6 @@ class ABXFeatureLoader:
                 totSize += loc_size
 
         bar.finish()
-        print("...done")
 
         self.data = torch.cat(data, dim=0)
         self.feature_dim = self.data.size(1)

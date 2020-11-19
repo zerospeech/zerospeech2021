@@ -6,7 +6,7 @@ import progressbar
 
 
 def get_distance_function_from_name(name_str):
-    if name_str == 'euclidian':
+    if name_str == 'euclidean':
         return get_euclidian_distance_batch
     if name_str == 'cosine':
         return get_cosine_distance_batch
@@ -135,7 +135,7 @@ def get_abx_scores_dtw_on_group(group_iterator,
 
     data_list = []
     coords_list = []
-    bar = progressbar.ProgressBar(maxval=len(group_iterator))
+    bar = progressbar.ProgressBar(prefix='  > ', maxval=len(group_iterator))
     bar.start()
 
     with torch.no_grad():

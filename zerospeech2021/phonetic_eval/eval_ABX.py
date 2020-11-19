@@ -1,14 +1,14 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 import argparse
-import sys
-import torch
-import json
 import os
+from pathlib import Path
+
 import numpy as np
+import torch
+
 import zerospeech2021.phonetic_eval.ABX_src.abx_group_computation as abx_g
 import zerospeech2021.phonetic_eval.ABX_src.abx_iterators as abx_it
 from zerospeech2021.phonetic_eval.CPC_loader import load_cpc_features, build_feature_from_file
-from pathlib import Path
 
 
 def find_all_files(path_dir, extension):
@@ -67,7 +67,7 @@ def ABX(feature_function,
 
     # ABX within
     if 'within' in modes:
-        print("Computing ABX within speakers...")
+        print("  > Computing ABX within speakers...")
         ABXIterator = ABXDataset.get_iterator('within', max_size_group)
         group_confusion = abx_g.get_abx_scores_dtw_on_group(ABXIterator,
                                                             distance_function,
@@ -89,11 +89,11 @@ def ABX(feature_function,
 
         scores['within'] = (phone_confusion.sum() /
                             (divisor_speaker > 0).sum()).item()
-        print(f"...done. ABX within : {scores['within']}")
+        print(f"  > ...done. ABX within : {scores['within']}")
 
     # ABX across
     if 'across' in modes:
-        print("Computing ABX across speakers...")
+        print("  > Computing ABX across speakers...")
         ABXIterator = ABXDataset.get_iterator('across', max_size_group)
         ABXIterator.max_x = max_x_across
         group_confusion = abx_g.get_abx_scores_dtw_on_group(ABXIterator,
@@ -116,7 +116,7 @@ def ABX(feature_function,
                                              divisor_speaker)
         scores['across'] = (phone_confusion.sum() /
                             (divisor_speaker > 0).sum()).item()
-        print(f"...done. ABX across : {scores['across']}")
+        print(f"  > ...done. ABX across : {scores['across']}")
 
     return scores
 
