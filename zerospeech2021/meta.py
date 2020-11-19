@@ -1,5 +1,6 @@
 """Validation of meta.yaml"""
 
+import numbers
 import numpy as np
 import scipy.spatial
 import yaml
@@ -93,7 +94,7 @@ def validate(submission):
          'description': (str, None),
          'open_source': (bool, None),
          'train_set': (str, None),
-         'gpu_budget': (float, None),
+         'gpu_budget': (numbers.Number, None),
          'parameters': (dict, None)})
 
     # parameters entries
@@ -106,7 +107,7 @@ def validate(submission):
     _validate_entries(
         meta['parameters']['phonetic'],
         {'metric': (str, ['cosine', 'euclidean', 'kl', 'kl_symmetric']),
-         'frame_shift': (float, None)},
+         'frame_shift': (numbers.Number, None)},
         prefix='parameters/phonetic')
 
     # parameters/semantic level
