@@ -154,7 +154,7 @@ def validate(
             # uncompress to the temp directory
             print(f'  > unzip submission to {submission_unzip}...')
             zipfile.ZipFile(submission, 'r').extractall(submission_unzip)
-            submission = submission_unzip
+            submission = pathlib.Path(submission_unzip)
         elif not submission.is_dir():
             raise ValueError(
                 f'submssion is not a zip file or a directory: {submission}')

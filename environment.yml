@@ -13,7 +13,6 @@ dependencies:
   - pip
   - pytorch
   - pyyaml
-  - requests
   - scipy
   - torchaudio
   - tqdm
