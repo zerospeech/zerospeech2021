@@ -93,7 +93,7 @@ def validate(submission):
          'description': (str, None),
          'open_source': (bool, None),
          'train_set': (str, None),
-         'budget': (float, None),
+         'gpu_budget': (float, None),
          'parameters': (dict, None)})
 
     # parameters entries
