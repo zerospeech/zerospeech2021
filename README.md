@@ -25,9 +25,7 @@ submission to the [ZeroSpeech Challenge 2021](https://zerospeech.com/2021).
 
 ## Usage
 
-The `zerospeech2021` package provides 3 command-line tools:
-
-* `zerospeech2021-download` which dowloads the challenge datasets
+The `zerospeech2021` package provides 2 command-line tools:
 
 * `zerospeech2021-validate` which validates a submission, ensuring all the
   required files are here and correctly formatted.
