@@ -8,7 +8,7 @@ submission to the [ZeroSpeech Challenge 2021](https://zerospeech.com/2021).
 
 * First clone this repository
 
-        git clone https://github.com/zerospeech/zerospeech2021.git
+        git clone https://github.com/bootphon/zerospeech2021.git
         cd zerospeech2021
 
 * Setup a conda environment:
@@ -19,7 +19,7 @@ submission to the [ZeroSpeech Challenge 2021](https://zerospeech.com/2021).
 
         conda activate zerospeech2021
 
-* Fiannly install this package:
+* Install the package:
 
         python setup.py install
 
