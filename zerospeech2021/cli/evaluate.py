@@ -139,7 +139,7 @@ def evaluate(
             atexit.register(shutil.rmtree, submission_unzip)
 
             # uncompress to the temp directory
-            print(f'Unzip submission ot {submission_unzip}...')
+            print(f'Unzip submission to {submission_unzip}...')
             zipfile.ZipFile(submission, 'r').extractall(submission_unzip)
             submission = pathlib.Path(submission_unzip)
         elif not submission.is_dir():

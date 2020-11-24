@@ -130,29 +130,24 @@ def validate(submission, dataset, kind, subset, njobs=1):
             f'but have: {set(ncols)}')
 
 
-def _get_files(gold, dataset, word):
-    """Returns the filenames in `gold` of given `dataset` and `word`
-
-    Parameters
-    ----------
-    dataset: str
-        The dataset type the `word` belongs to, must be 'synthetic' or
-        'librispeech'.
-    word : str
-        The word to look after in the gold.
-
-    """
-    cond = (gold['type'] == dataset) & (gold['word'] == word)
-    files = gold['filename'][cond].to_list()
-    assert 0 < len(files) <= 10
-    return files
-
-
 def _compute_distance(pair, gold, pool, metric):
     """Returns the mean distance between a pair of words"""
+    function = {
+        'librispeech': _compute_distance_librispeech,
+        'synthetic': _compute_distance_synthetic}[pair['type']]
+
+    return function(pair, gold, pool, metric)
+
+
+def _compute_distance_librispeech(pair, gold, pool, metric):
+    # filter out 'synthetic' data from gold
+    assert pair['type'] == 'librispeech'
+    gold = gold[gold['type'] == 'librispeech']
+
     # get the list of tokens corresponding to the given pair of words
-    tokens_1 = _get_files(gold, pair['type'], pair['word_1'])
-    tokens_2 = _get_files(gold, pair['type'], pair['word_2'])
+    tokens_1 = gold['filename'][gold['word'] == pair['word_1']]
+    tokens_2 = gold['filename'][gold['word'] == pair['word_2']]
+    assert 0 < len(tokens_1) <= 10 and 0 < len(tokens_2) <= 10
 
     X = np.asarray(pool[pool['filename'].isin(tokens_1)]['pooling'].tolist())
     Y = np.asarray(pool[pool['filename'].isin(tokens_2)]['pooling'].tolist())
@@ -161,12 +156,32 @@ def _compute_distance(pair, gold, pool, metric):
     return scipy.spatial.distance.cdist(X, Y, metric=metric).mean()
 
 
+def _compute_distance_synthetic(pair, gold, pool, metric):
+    # filter out 'librispeech' data from gold
+    assert pair['type'] == 'synthetic'
+    gold = gold[gold['type'] == 'synthetic']
+
+    # get the list of tokens corresponding to the given pair of words
+    tokens_1 = gold[['filename', 'voice']][gold['word'] == pair['word_1']]
+    tokens_2 = gold[['filename', 'voice']][gold['word'] == pair['word_2']]
+    tokens = tokens_1.merge(tokens_2, on='voice').drop(['voice'], axis=1)
+
+    # compute the mean of distances within a given voice
+    dist = 0
+    for _, (filename_x, filename_y) in tokens.iterrows():
+        X = pool[pool['filename'] == filename_x]['pooling'].item()
+        Y = pool[pool['filename'] == filename_y]['pooling'].item()
+        dist += scipy.spatial.distance.cdist(
+            np.atleast_2d(X), np.atleast_2d(Y), metric=metric)[0][0]
+    return dist / len(tokens)
+
+
 def _correlation(df):
     # choose 'similarity' or 'relatedness' column (the one with no NaN)
     human = df.similarity if df.relatedness.hasnans else df.relatedness
     assert not human.hasnans
 
-    # return spearman correlation. Hhumans score are similarity (high when
+    # return spearman correlation. Humans score are similarity (high when
     # close) so we take the opposite to have a quantity close to a distance
     # (low when close)
     return 100 * scipy.stats.spearmanr(
@@ -236,7 +251,9 @@ def evaluate(gold_file, pairs_file, submission_dir, metric, pooling, njobs=1):
             'last': lambda x: x[-1],
             'lastlast': lambda x: x[-2]}[pooling]
     except KeyError:
-        raise ValueError('pooling method must be "max", "min" or "mean"')
+        raise ValueError(
+            'pooling method must be "max", "min", "mean", "sum", '
+            '"last" or "lastlast"')
 
     # load the pairs and gold files
     pairs = pandas.read_csv(pairs_file, header=0)
@@ -258,6 +275,6 @@ def evaluate(gold_file, pairs_file, submission_dir, metric, pooling, njobs=1):
         for _, pair in pairs.iterrows()]
 
     # compute correlations
-    print('  > Computing Spearman correlations')
+    print('  > Computing Spearman correlations...')
     correlation = _compute_correlation(pairs)
     return pairs, correlation
