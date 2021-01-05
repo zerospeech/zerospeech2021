@@ -110,8 +110,8 @@ def evaluate(
         no_phonetic, no_lexical, no_syntactic, no_semantic):
     """Evaluate a submission to the Zero Resource Speech Challenge 2021
 
-    DATASET is the root directory of the ZR2021 dataset, as downloaded with the
-    zerospeech2021-download tool.
+    DATASET is the root directory of the ZR2021 dataset, as downloaded from
+    https://zerospeech.com/2021.
 
     SUBMISSION is the submission to evaluate, it can be a .zip file or a
     directory.
