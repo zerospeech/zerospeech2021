@@ -3,12 +3,17 @@
 
 import codecs
 import setuptools
-
-import numpy
-from Cython.Build import cythonize
-
-
+import setuptools.command.build_ext
 import zerospeech2021
+
+
+class build_ext(setuptools.command.build_ext.build_ext):
+    def finalize_options(self):
+        setuptools.command.build_ext.build_ext.finalize_options(self)
+        # Prevent numpy from thinking it is still in its setup process:
+        __builtins__.__NUMPY_SETUP__ = False
+        import numpy
+        self.include_dirs.append(numpy.get_include())
 
 
 setuptools.setup(
@@ -22,12 +27,16 @@ setuptools.setup(
 
     # include Python code
     packages=setuptools.find_packages(),
-    ext_modules=cythonize(
-        setuptools.Extension(
-            "libri_light_dtw",
-            ["zerospeech2021/phonetic_eval/ABX_src/dtw.pyx"],
-            include_dirs=[numpy.get_include()])),
-    zip_safe=True,
+
+    # build cython extension
+    ext_modules=[setuptools.Extension(
+        'libri_light_dtw',
+        sources=['zerospeech2021/phonetic_eval/ABX_src/dtw.pyx'],
+        extra_compile_args=['-O3'])],
+
+    # needed for cython/setuptools, see
+    # http://docs.cython.org/en/latest/src/quickstart/build.html
+    zip_safe=False,
 
     # the command-line scripts to export
     entry_points={
