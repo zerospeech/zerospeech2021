@@ -75,7 +75,7 @@ def eval_syntactic(dataset, submission, output, kinds):
             by_type, output / f'score_syntactic_{kind}_by_type.csv')
 
 
-def eval_phonetic(dataset, submission, output, kinds):
+def eval_phonetic(dataset, submission, output, kinds, force_cpu):
     meta = yaml.safe_load((submission / 'meta.yaml').open('r').read())
     metric = meta['parameters']['phonetic']['metric']
     frame_shift = meta['parameters']['phonetic']['frame_shift']
@@ -84,7 +84,7 @@ def eval_phonetic(dataset, submission, output, kinds):
     for kind in kinds:  # 'dev' or 'test'
         results.append(phonetic.evaluate(
             submission / 'phonetic', dataset / 'phonetic',
-            kind, metric, frame_shift))
+            kind, metric, frame_shift, force_cpu=force_cpu))
 
     write_csv(pandas.concat(results), output / 'score_phonetic.csv')
 
@@ -94,7 +94,9 @@ def eval_phonetic(dataset, submission, output, kinds):
 @click.argument('submission', type=pathlib.Path)
 @click.option(
     '-j', '--njobs', default=1, type=int,
-    help='Number of parallel jobs (default to 1)')
+    help='Parallel jobs to use for semantic part (default to 1)')
+@click.option(
+    '--force-cpu', help='Do not use GPU for phonetic part', is_flag=True)
 @click.option(
     '-o', '--output-directory', type=pathlib.Path,
     default='.', show_default=True,
@@ -104,7 +106,7 @@ def eval_phonetic(dataset, submission, output, kinds):
 @click.option('--no-syntactic', help="Skip syntactic part", is_flag=True)
 @click.option('--no-semantic', help="Skip semantic part", is_flag=True)
 def evaluate(
-        dataset, submission, njobs, output_directory,
+        dataset, submission, njobs, force_cpu, output_directory,
         no_phonetic, no_lexical, no_syntactic, no_semantic):
     """Evaluate a submission to the Zero Resource Speech Challenge 2021
 
@@ -159,7 +161,8 @@ def evaluate(
             eval_syntactic(dataset, submission, output_directory, kinds)
 
         if not no_phonetic:
-            eval_phonetic(dataset, submission, output_directory, kinds)
+            eval_phonetic(
+                dataset, submission, output_directory, kinds, force_cpu)
     except ValueError as error:
         print(f'ERROR: {error}')
         sys.exit(-1)

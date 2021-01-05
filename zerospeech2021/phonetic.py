@@ -173,7 +173,7 @@ def validate(submission, dataset, kind, njobs=1):
             'mismatch in filenames', valid_entries, submitted_files)
 
 
-def evaluate(submission, dataset, kind, metric, frame_shift):
+def evaluate(submission, dataset, kind, metric, frame_shift, force_cpu=False):
     """Writes the phonetic evaluation results to `output_dir`
 
     Parameters
@@ -191,6 +191,8 @@ def evaluate(submission, dataset, kind, metric, frame_shift):
         Must be 'cosine', 'euclidean', 'kl' or 'kl_symmetric'
     frame_shift : float
         The shift between two features frames in s.
+    force_cpu: bool, optional
+        When True use CPU, elsewise use PU (default to False)
 
     Returns
     -------
@@ -209,7 +211,8 @@ def evaluate(submission, dataset, kind, metric, frame_shift):
             path_data=str(submission / subkind),
             path_item_file=str(dataset / subkind / f'{subkind}.item'),
             distance_mode=metric,
-            feature_size=frame_shift)
+            feature_size=frame_shift,
+            cuda=not force_cpu)
 
         results[subkind] = eval_ABX.main(arg_obj=arg_obj)
 
