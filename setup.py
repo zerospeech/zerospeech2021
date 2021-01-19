@@ -2,18 +2,10 @@
 """Setup script for the zerospeech2021 Python package"""
 
 import codecs
-import setuptools
-import setuptools.command.build_ext
-import zerospeech2021
 import numpy
+import setuptools
 
-class build_ext(setuptools.command.build_ext.build_ext):
-    def finalize_options(self):
-        setuptools.command.build_ext.build_ext.finalize_options(self)
-        # Prevent numpy from thinking it is still in its setup process:
-        __builtins__.__NUMPY_SETUP__ = False
-        import numpy
-        self.include_dirs.append(numpy.get_include())
+import zerospeech2021
 
 
 setuptools.setup(
