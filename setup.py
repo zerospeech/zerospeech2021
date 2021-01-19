@@ -2,18 +2,10 @@
 """Setup script for the zerospeech2021 Python package"""
 
 import codecs
+import numpy
 import setuptools
-import setuptools.command.build_ext
+
 import zerospeech2021
-
-
-class build_ext(setuptools.command.build_ext.build_ext):
-    def finalize_options(self):
-        setuptools.command.build_ext.build_ext.finalize_options(self)
-        # Prevent numpy from thinking it is still in its setup process:
-        __builtins__.__NUMPY_SETUP__ = False
-        import numpy
-        self.include_dirs.append(numpy.get_include())
 
 
 setuptools.setup(
@@ -32,7 +24,8 @@ setuptools.setup(
     ext_modules=[setuptools.Extension(
         'libri_light_dtw',
         sources=['zerospeech2021/phonetic_eval/ABX_src/dtw.pyx'],
-        extra_compile_args=['-O3'])],
+        extra_compile_args=['-O3'],
+        include_dirs=[numpy.get_include()])],
 
     # needed for cython/setuptools, see
     # http://docs.cython.org/en/latest/src/quickstart/build.html
