@@ -65,7 +65,8 @@ def validate(submission):
             frame_shift: <float>
           semantic:
             metric: <str>
-            pooling: <str>, "min", "max" or "mean"
+            pooling: <str>, "min", "max", "mean", "sum", "last", lastlast" or
+            "off"
 
     Raises
     ------
@@ -114,7 +115,8 @@ def validate(submission):
     _validate_entries(
         meta['parameters']['semantic'],
         {'metric': (str, None),
-         'pooling': (str, ['min', 'max', 'mean', 'sum', 'last', 'lastlast'])},
+         'pooling': (str, [
+             'min', 'max', 'mean', 'sum', 'last', 'lastlast', 'off'])},
         prefix='parameters/semantic')
 
     _validate_scipy_metric(meta['parameters']['semantic']['metric'])

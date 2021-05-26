@@ -213,8 +213,8 @@ def evaluate(gold_file, pairs_file, submission_dir, metric, pooling, njobs=1):
         by `scipy.spatial.distance.cdist` (see
         https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.cdist.html)
     pooling : str
-        The pooling method to use, must be 'min', 'max', 'mean', 'sum', 'last'
-        or 'lastlast'.
+        The pooling method to use, must be 'min', 'max', 'mean', 'sum', 'last',
+        'lastlast' or 'off'.
 
     Returns
     -------
@@ -249,7 +249,8 @@ def evaluate(gold_file, pairs_file, submission_dir, metric, pooling, njobs=1):
             'min': lambda x: np.min(x, axis=0),
             'sum': lambda x: np.sum(x, axis=0),
             'last': lambda x: x[-1],
-            'lastlast': lambda x: x[-2]}[pooling]
+            'lastlast': lambda x: x[-2],
+            'off': lambda x: x}[pooling]
     except KeyError:
         raise ValueError(
             'pooling method must be "max", "min", "mean", "sum", '
