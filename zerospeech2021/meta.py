@@ -58,7 +58,8 @@ def validate(submission):
         description: <str>
         open_source: <bool>
         train_set: <str>
-        budget: <float>
+        visually_grounded: <bool>
+        gpu_budget: <float>
         parameters:
           phonetic:
             metric: <str>, "cosine", "euclidean", "kl" or "kl_symmetric"
@@ -95,6 +96,7 @@ def validate(submission):
          'description': (str, None),
          'open_source': (bool, None),
          'train_set': (str, None),
+         'visually_grounded': (bool, None),
          'gpu_budget': (numbers.Number, None),
          'parameters': (dict, None)})
 
