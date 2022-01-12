@@ -142,14 +142,16 @@ def load_data(gold_file, submission_file):
     # 'phones' and 'filename' as we don't use them for evaluation
     data = pandas.merge(gold, score, on='filename', how='inner') 
     data.reset_index(inplace=True)
+    # if all non words have their textual version set to NaN, we take their phonemic version instead.
+    if data[data.correct == 0]['word'].isnull().sum() == len(data[data.correct==0]):
+        data['word'] = data['phones']
     data.drop(columns=['phones', 'filename'], inplace=True)
     
     # going from a word per line to a pair (word, non word) per line
-    data = pandas.concat([
-        data.loc[data['correct'] == 1].reset_index().rename(
-            lambda x: 'w_' + x, axis=1),
-        data.loc[data['correct'] == 0].reset_index().rename(
-            lambda x: 'nw_' + x, axis=1)], axis=1)
+    words = data.loc[data['correct'] == 1].reset_index().rename(lambda x: 'w_' + x, axis=1)
+    non_words = data.loc[data['correct'] == 0].reset_index().rename(lambda x: 'nw_' + x, axis=1)
+    data = pandas.merge(words, non_words, left_on=['w_voice', 'w_id'], right_on=['nw_voice', 'nw_id'])
+    
     data.drop(
         ['w_index', 'nw_index', 'nw_voice', 'nw_frequency',
          'w_correct', 'nw_correct', 'nw_id', 'nw_length'],
