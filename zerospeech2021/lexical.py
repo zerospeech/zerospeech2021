@@ -140,10 +140,10 @@ def load_data(gold_file, submission_file):
 
     # merge the gold and score using filenames, then remove the columns
     # 'phones' and 'filename' as we don't use them for evaluation
-    data = pandas.concat([gold, score], axis=1)
+    data = pandas.merge(gold, score, on='filename', how='inner') 
     data.reset_index(inplace=True)
     data.drop(columns=['phones', 'filename'], inplace=True)
-
+    
     # going from a word per line to a pair (word, non word) per line
     data = pandas.concat([
         data.loc[data['correct'] == 1].reset_index().rename(
