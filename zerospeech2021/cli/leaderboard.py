@@ -48,11 +48,11 @@ def create(submission_location: Path, dataset_location, score_location: Path,
 
 
 @click.command(epilog='See https://zerospeech.com/2021 for more details')
-@click.argument('submission', type=Path, help="Location to submission input")
-@click.argument('dataset', type=Path, help="Location of the test dataset")
-@click.argument('scores', type=Path, help="Location of the computed scores")
-@click.argument('-u', '--user-meta', type=Path, help="Location of platform metadata")
-@click.argument('-o', '--output-file', type=Path, help="Location & name of the leaderboard file")
+@click.argument('submission', type=Path)
+@click.argument('dataset', type=Path)
+@click.argument('scores', type=Path)
+@click.option('-u', '--user-meta', type=Path, help="Location of platform metadata")
+@click.option('-o', '--output-file', type=Path, help="Location & name of the leaderboard file")
 def leaderboard(submission: Path, dataset: Path, scores: Path, user_meta, output_file):
     """ CLI wrapper to build leaderboard entry """
     try:

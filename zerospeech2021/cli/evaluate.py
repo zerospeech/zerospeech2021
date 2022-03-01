@@ -163,6 +163,7 @@ def evaluate(
         if not no_phonetic:
             eval_phonetic(
                 dataset, submission, output_directory, kinds, force_cpu)
+
     except ValueError as error:
         print(f'ERROR: {error}')
         sys.exit(-1)
