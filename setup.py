@@ -36,7 +36,8 @@ setuptools.setup(
         'console_scripts': [
             'zerospeech2021-validate        = zerospeech2021.cli.validate:validate',
             'zerospeech2021-evaluate        = zerospeech2021.cli.evaluate:evaluate',
-            'zerospeech2021-leaderboard     = zerospeech2021.cli.leaderboard:leaderboard'
+            'zerospeech2021-leaderboard     = zerospeech2021.cli.leaderboard:leaderboard',
+            'zerospeech2021-upload          = zerospeech2021.cli.upload:upload_cmd'
         ]},
 
     # metadata

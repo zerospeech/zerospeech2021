@@ -36,5 +36,7 @@ The `zerospeech2021` package provides 2 command-line tools:
 
 * `zerospeech2021-leaderboard` which allows generation of leaderboard entries from scores.
 
+* `zerospeech2021-upload` utility to allow upload submission to zerospeech.com.
+
 Each tool comes with a `--help` option describing the possible arguments (e.g.
 `zerospeech2021-validate --help`).
