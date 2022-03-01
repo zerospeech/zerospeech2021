@@ -263,8 +263,8 @@ class Metadata:
     open_source: bool
     train_set: str
     gpu_budget: float
-    visually_grounded: bool
     parameters: Dict
+    visually_grounded: bool = False
     submission_id: Optional[str] = None
     submission_date: Optional[datetime] = None
     submitted_by: Optional[str] = None
