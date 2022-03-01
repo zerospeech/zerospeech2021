@@ -34,8 +34,10 @@ setuptools.setup(
     # the command-line scripts to export
     entry_points={
         'console_scripts': [
-            'zerospeech2021-validate = zerospeech2021.cli.validate:validate',
-            'zerospeech2021-evaluate = zerospeech2021.cli.evaluate:evaluate']},
+            'zerospeech2021-validate        = zerospeech2021.cli.validate:validate',
+            'zerospeech2021-evaluate        = zerospeech2021.cli.evaluate:evaluate',
+            'zerospeech2021-leaderboard     = zerospeech2021.cli.leaderboard:leaderboard'
+        ]},
 
     # metadata
     author='CoML team',
