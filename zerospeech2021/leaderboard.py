@@ -271,7 +271,7 @@ class Metadata:
 
     @staticmethod
     def parse_external_meta(filepath: Path) -> Dict:
-        if not filepath.is_file():
+        if filepath is None or not filepath.is_file():
             return {}
         elif filepath.suffix == '.json':
             with filepath.open() as fp:
