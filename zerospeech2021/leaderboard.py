@@ -164,7 +164,10 @@ class SemanticScore:
         ntest_correlations.columns = ['dataset', 'librispeech', 'synthetic']
         ntest_correlations["set"] = "test"
 
-        correlations = ndev_correlations.append(ntest_correlations)
+        # todo: DeprecationWarning: append is to be replaced by concat
+        correlations = pd.concat([ndev_correlations, ntest_correlations], axis=0)
+        # correlations = ndev_correlations.append(ntest_correlations)
+
         return correlations.to_dict(orient='records')
 
 
