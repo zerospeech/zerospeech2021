@@ -13,7 +13,8 @@ from zerospeech2021 import zr_upload_lib as zr_up
 console = Console()
 
 # The challenge to use for uploads
-CHALLENGE_ID: int = 1
+# ID 6 => zerospeech2021
+CHALLENGE_ID: int = 6
 
 
 @click.group(epilog='See https://zerospeech.com/2021 for more details')
