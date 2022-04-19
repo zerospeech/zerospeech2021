@@ -2,6 +2,7 @@
 
 import collections
 import pathlib
+import sys
 
 import pandas
 from zerospeech2021.exception import FormatError, MismatchError
@@ -136,7 +137,17 @@ def load_data(gold_file, submission_file):
 
     # ensures the filenames in gold and submission are the same
     if set(gold.index) != set(score.index):
-        raise ValueError('mismatch between gold and submission !')
+        has_less_files = set(gold.index) - set(score.index)
+        has_more_files = set(score.index) - set(gold.index)
+        print("MismatchError:", file=sys.stderr)
+        if len(has_more_files) > 0:
+            print('submission has extra files', file=sys.stderr)
+            print(f'extra files: {has_more_files}', file=sys.stderr)
+
+        if len(has_less_files) > 0:
+            print('submission is missing files', file=sys.stderr)
+            print(f'missing files: {has_less_files}:', file=sys.stderr)
+        sys.exit(1)
 
     # merge the gold and score using filenames, then remove the columns
     # 'phones' and 'filename' as we don't use them for evaluation
